@@ -61,6 +61,38 @@ function renderList(block) {
   return `<${tag}>${items}</${tag}>`;
 }
 
+function renderCoverField(label, value) {
+  return `
+    <div class="cover-field">
+      <span class="cover-label">${escapeHtml(label)}</span>
+      <span class="cover-value">${escapeHtml(value)}</span>
+    </div>`;
+}
+
+function looksLikeGenericCaption(value) {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (!text) {
+    return true;
+  }
+
+  return /^(img|image|screenshot|screen-shot|photo|picture)([-_\s]?\d+)?(\.[a-z0-9]+)?$/i.test(text);
+}
+
+function renderContentBox(cover) {
+  const items = cover.contentItems || [];
+  const leftItems = items.slice(0, 3);
+  const rightItems = items.slice(3, 6);
+
+  return `
+    <section class="cover-content-box">
+      <div class="cover-content-title">${escapeHtml(cover.contentTitle)}</div>
+      <div class="cover-content-grid">
+        <div>${leftItems.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>
+        <div>${rightItems.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>
+      </div>
+    </section>`;
+}
+
 async function renderBlock(block) {
   if (block.type === "heading") {
     const level = Math.min(Math.max(block.level, 1), 6);
@@ -91,10 +123,12 @@ async function renderBlock(block) {
       return `<div class="image-missing">图片缺失：${escapeHtml(block.caption || block.src)}</div>`;
     }
 
+    const caption = looksLikeGenericCaption(block.caption) ? "" : block.caption;
+
     return `
-      <figure>
+      <figure class="report-image">
         <img src="${src}" alt="${escapeHtml(block.caption || "图片")}" />
-        <figcaption>${escapeHtml(block.caption || "图片")}</figcaption>
+        ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}
       </figure>`;
   }
 
@@ -113,21 +147,19 @@ export async function renderReportHtml({ form, ast }) {
         <title>${escapeHtml(form.project)} - 报告</title>
         <style>
           :root {
-            --ink: #1f2937;
+            --ink: #111827;
             --muted: #5b6475;
             --line: #d7deea;
             --paper: #ffffff;
-            --panel: #f7f8fc;
-            --accent: #c96f35;
             --title-font: "Microsoft YaHei", sans-serif;
-            --body-font: "Microsoft YaHei", sans-serif;
+            --body-font: "SimSun", "Songti SC", serif;
             --code-font: "Consolas", monospace;
           }
           * { box-sizing: border-box; }
           body {
             margin: 0;
             color: var(--ink);
-            background: #eef2f8;
+            background: #ffffff;
             font-family: var(--body-font);
           }
           main {
@@ -139,40 +171,88 @@ export async function renderReportHtml({ form, ast }) {
           }
           .cover {
             min-height: 245mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            text-align: center;
+            padding-top: 44mm;
             page-break-after: always;
           }
-          .cover h1 {
+          .cover-head {
+            text-align: center;
+          }
+          .cover-school {
             margin: 0;
-            font-size: 28px;
-            letter-spacing: 0.08em;
+            font-size: 15pt;
+            font-weight: 700;
           }
-          .cover h2 {
-            margin: 20px 0 8px;
-            font-size: 22px;
-            color: var(--accent);
+          .cover-title {
+            margin: 10pt 0 0;
+            font-size: 18pt;
+            font-weight: 700;
+            font-family: "SimHei", "Microsoft YaHei", sans-serif;
+            letter-spacing: 0.28em;
           }
-          .cover p {
-            margin: 6px 0;
-            color: var(--muted);
-            font-size: 14px;
+          .cover-subtitle {
+            margin: 8pt 0 0;
+            font-size: 12pt;
+            font-weight: 700;
+            font-family: "Times New Roman", serif;
           }
-          .cover-grid {
-            width: 100%;
-            margin-top: 48px;
-            border-collapse: collapse;
+          .cover-content-box {
+            width: 130mm;
+            margin: 14mm auto 10mm;
+            border: 1px solid #111827;
+            padding: 4mm 7mm 5mm;
           }
-          .cover-grid td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--line);
-            font-size: 14px;
+          .cover-content-title {
+            text-align: center;
+            font-size: 11pt;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            margin-bottom: 3mm;
           }
-          .cover-grid td:first-child {
-            width: 32%;
-            color: var(--muted);
+          .cover-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8mm;
+          }
+          .cover-content-grid p {
+            margin: 1.5mm 0;
+            font-size: 10pt;
+            line-height: 1.45;
+          }
+          .cover-fields {
+            width: 148mm;
+            margin: 8mm auto 0;
+            display: grid;
+            gap: 4mm;
+          }
+          .cover-row {
+            display: grid;
+            gap: 5mm;
+          }
+          .cover-row.three {
+            grid-template-columns: 1fr 0.82fr 1fr;
+          }
+          .cover-row.single {
+            grid-template-columns: 1fr;
+            width: 110mm;
+            margin: 2mm auto 0;
+          }
+          .cover-field {
+            display: flex;
+            align-items: baseline;
+            gap: 1.5mm;
+            font-size: 12pt;
+            font-weight: 700;
+          }
+          .cover-label {
+            white-space: nowrap;
+          }
+          .cover-value {
+            flex: 1;
+            min-height: 1.1em;
+            padding: 0 1mm 0.5mm;
+            border-bottom: 1px solid #111827;
+            font-size: 11pt;
+            font-weight: 400;
           }
           h1, h2, h3, h4 {
             font-family: var(--title-font);
@@ -190,16 +270,23 @@ export async function renderReportHtml({ form, ast }) {
             margin: 24px 0;
             text-align: center;
           }
-          figure img {
+          .report-image {
+            display: block;
             max-width: 100%;
+            margin: 24px 0;
+          }
+          figure img {
+            display: block;
+            max-width: min(100%, ${styles.image.maxWidth}px);
             max-height: ${styles.image.maxHeight}px;
-            border-radius: 12px;
-            border: 1px solid var(--line);
+            margin: 0 auto;
+            object-fit: contain;
           }
           figcaption {
-            margin-top: 8px;
-            color: var(--muted);
+            margin-top: 10px;
+            color: #4b5563;
             font-size: 12px;
+            text-align: center;
           }
           .code-block {
             margin: 20px 0;
@@ -250,21 +337,27 @@ export async function renderReportHtml({ form, ast }) {
       <body>
         <main>
           <section class="cover">
-            <p>${escapeHtml(cover.schoolName)}</p>
-            <h1>${escapeHtml(cover.reportTitle)}</h1>
-            <h2>${escapeHtml(form.project)}</h2>
-            <p>${escapeHtml(cover.subtitle)}</p>
-            <table class="cover-grid">
-              <tbody>
-                <tr><td>系部</td><td>${escapeHtml(form.department)}</td></tr>
-                <tr><td>年级</td><td>${escapeHtml(form.grade)}</td></tr>
-                <tr><td>课程</td><td>${escapeHtml(form.course)}</td></tr>
-                <tr><td>姓名</td><td>${escapeHtml(form.name)}</td></tr>
-                <tr><td>学号</td><td>${escapeHtml(form.studentId)}</td></tr>
-                <tr><td>日期</td><td>${escapeHtml(form.date)}</td></tr>
-              </tbody>
-            </table>
-            <p>${escapeHtml(cover.footerNote)}</p>
+            <div class="cover-head">
+              <p class="cover-school">${escapeHtml(cover.schoolNameZh)}</p>
+              <h1 class="cover-title">${escapeHtml(cover.reportTitleZh)}</h1>
+              <p class="cover-subtitle">${escapeHtml(cover.reportTitleEn)}</p>
+            </div>
+            ${renderContentBox(cover)}
+            <div class="cover-fields">
+              <div class="cover-row three">
+                ${renderCoverField(cover.labels.department, form.department)}
+                ${renderCoverField(cover.labels.grade, form.grade)}
+                ${renderCoverField(cover.labels.course, form.course)}
+              </div>
+              <div class="cover-row three">
+                ${renderCoverField(cover.labels.name, form.name)}
+                ${renderCoverField(cover.labels.studentId, form.studentId)}
+                ${renderCoverField(cover.labels.date, form.date)}
+              </div>
+              <div class="cover-row single">
+                ${renderCoverField(cover.labels.project, form.project)}
+              </div>
+            </div>
           </section>
           ${blocks.join("\n")}
         </main>

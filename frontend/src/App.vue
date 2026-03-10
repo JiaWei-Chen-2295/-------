@@ -29,7 +29,10 @@ const errorMessage = ref("");
 const previewHtml = computed(() => renderPreview(markdown.value));
 
 function appendImageReference(fileName, url) {
-  const label = fileName.replace(/\.[^.]+$/, "") || "运行结果";
+  const rawLabel = fileName.replace(/\.[^.]+$/, "").trim();
+  const label = /^(img|image|screenshot|screen-shot)([-_\s]?\d+)?$/i.test(rawLabel)
+    ? "运行截图"
+    : rawLabel || "运行结果";
   markdown.value = `${markdown.value.trimEnd()}\n\n![${label}](${url})\n`;
 }
 
