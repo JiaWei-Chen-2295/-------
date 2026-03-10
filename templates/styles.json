@@ -1,0 +1,28 @@
+{
+  "page": {
+    "marginTop": 1200,
+    "marginBottom": 1200,
+    "marginLeft": 1440,
+    "marginRight": 1440
+  },
+  "title": {
+    "font": "Microsoft YaHei",
+    "size": 36,
+    "color": "213547"
+  },
+  "body": {
+    "font": "Microsoft YaHei",
+    "size": 24,
+    "line": 360
+  },
+  "code": {
+    "font": "Consolas",
+    "size": 18,
+    "line": 280,
+    "background": "F6F7FB"
+  },
+  "image": {
+    "maxWidth": 520,
+    "maxHeight": 320
+  }
+}
