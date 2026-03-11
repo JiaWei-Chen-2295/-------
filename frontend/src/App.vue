@@ -208,7 +208,7 @@ function resetDraft() {
 <template>
   <div class="shell">
     <section class="topbar">
-      <a-steps :current="currentStep" responsive class="app-steps app-steps-plain">
+      <a-steps :current="currentStep" :responsive="false" class="app-steps app-steps-plain">
         <a-step
           v-for="(item, index) in stepItems"
           :key="item.title"
