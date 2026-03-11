@@ -15,6 +15,7 @@ import {
   imagesDir,
   outputsDir
 } from "./utils/paths.js";
+import { getStorageMode } from "./storage/objectStorage.js";
 
 export async function buildApp() {
   await ensureRuntimeDirs();
@@ -24,6 +25,9 @@ export async function buildApp() {
     bodyLimit: 10 * 1024 * 1024
   });
 
+  const storageMode = getStorageMode();
+  const canServeLocalFiles = storageMode === "local";
+
   await app.register(cors, { origin: true });
   await app.register(multipart, {
     limits: {
@@ -32,21 +36,26 @@ export async function buildApp() {
     }
   });
 
-  await app.register(fastifyStatic, {
-    root: imagesDir,
-    prefix: "/images/"
-  });
+  if (canServeLocalFiles) {
+    await app.register(fastifyStatic, {
+      root: imagesDir,
+      prefix: "/images/"
+    });
 
-  await app.register(fastifyStatic, {
-    root: outputsDir,
-    prefix: "/download/",
-    decorateReply: false
-  });
+    await app.register(fastifyStatic, {
+      root: outputsDir,
+      prefix: "/download/",
+      decorateReply: false
+    });
+  }
 
   await registerUploadRoutes(app);
   await registerReportRoutes(app);
 
-  app.get("/health", async () => ({ status: "ok" }));
+  app.get("/health", async () => ({
+    status: "ok",
+    storage: storageMode
+  }));
 
   const hasFrontendDist = await fileExists(frontendDistDir);
   if (hasFrontendDist) {
@@ -61,9 +70,9 @@ export async function buildApp() {
       const assetLikeRequest =
         request.url.startsWith("/generate") ||
         request.url.startsWith("/upload") ||
-        request.url.startsWith("/download/") ||
-        request.url.startsWith("/images/") ||
-        request.url.startsWith("/health");
+        request.url.startsWith("/health") ||
+        (canServeLocalFiles &&
+          (request.url.startsWith("/download/") || request.url.startsWith("/images/")));
 
       if (!assetLikeRequest && request.raw.method === "GET") {
         return fs

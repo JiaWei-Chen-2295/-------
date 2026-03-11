@@ -36,19 +36,29 @@ const DEFAULT_STYLES = {
   },
   title: {
     font: "Microsoft YaHei",
+    htmlFont: ["Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", "sans-serif"],
     size: 36,
     color: "213547"
   },
   body: {
     font: "Microsoft YaHei",
+    htmlFont: ["Microsoft YaHei", "Noto Serif CJK SC", "Noto Serif SC", "SimSun", "serif"],
     size: 24,
     line: 360
   },
   code: {
     font: "Consolas",
+    htmlFont: ["Consolas", "Cascadia Mono", "Noto Sans Mono CJK SC", "monospace"],
     size: 18,
     line: 280,
     background: "F6F7FB"
+  },
+  cover: {
+    schoolFont: ["Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "sans-serif"],
+    titleFont: ["SimHei", "Microsoft YaHei", "Noto Sans CJK SC", "sans-serif"],
+    subtitleFont: ["Times New Roman", "Noto Serif", "serif"],
+    contentFont: ["KaiTi", "Noto Serif CJK SC", "Noto Serif SC", "serif"],
+    infoFont: ["Microsoft YaHei", "Noto Serif CJK SC", "Noto Serif SC", "serif"]
   },
   image: {
     maxWidth: 520,

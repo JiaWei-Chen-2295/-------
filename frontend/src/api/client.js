@@ -1,7 +1,11 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
+function isAbsoluteUrl(value) {
+  return /^https?:\/\//i.test(String(value ?? ""));
+}
+
 function withBase(path) {
-  if (!API_BASE) {
+  if (!API_BASE || isAbsoluteUrl(path)) {
     return path;
   }
 

@@ -1,10 +1,6 @@
-import path from "node:path";
-
 import { generateDocx } from "./docxGenerator.js";
-import { renderReportHtml } from "./htmlRenderer.js";
-import { generatePdf } from "./pdfGenerator.js";
 import { parseMarkdownToAst } from "../parser/markdownParser.js";
-import { outputsDir } from "../utils/paths.js";
+import { saveReport } from "../storage/objectStorage.js";
 
 function slugify(value) {
   return String(value)
@@ -19,18 +15,11 @@ export async function generateReport({ form, markdown }) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const baseName = `${timestamp}-${slugify(form.project)}`;
   const docxFilename = `${baseName}.docx`;
-  const pdfFilename = `${baseName}.pdf`;
-  const docxPath = path.join(outputsDir, docxFilename);
-  const pdfPath = path.join(outputsDir, pdfFilename);
-
-  await generateDocx({ form, ast, outputPath: docxPath });
-
-  const html = await renderReportHtml({ form, ast });
-  await generatePdf({ html, outputPath: pdfPath });
+  const docxBuffer = await generateDocx({ form, ast });
+  const stored = await saveReport(docxFilename, docxBuffer);
 
   return {
-    docx: `/download/${docxFilename}`,
-    pdf: `/download/${pdfFilename}`,
+    docx: stored.downloadUrl,
     blocks: ast.length
   };
 }

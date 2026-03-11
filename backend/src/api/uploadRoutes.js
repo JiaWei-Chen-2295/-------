@@ -1,9 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
-import { pipeline } from "node:stream/promises";
-
-import { buildImageUrl, createStoredImageName } from "../utils/pathSafety.js";
-import { imagesDir } from "../utils/paths.js";
+import { createStoredImageName } from "../utils/pathSafety.js";
+import { saveImage } from "../storage/objectStorage.js";
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/png",
@@ -27,12 +23,14 @@ export async function registerUploadRoutes(app) {
       }
 
       const filename = createStoredImageName(file.filename);
-      const targetPath = path.join(imagesDir, filename);
-      await pipeline(file.file, fs.createWriteStream(targetPath));
+      const buffer = await file.toBuffer();
+      const stored = await saveImage(filename, buffer, {
+        contentType: file.mimetype
+      });
 
       return {
-        url: buildImageUrl(filename),
-        filename
+        url: stored.url,
+        filename: stored.filename
       };
     } catch (error) {
       request.log.error(error);
