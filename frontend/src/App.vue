@@ -1,6 +1,62 @@
 <script setup>
 import { computed, ref, watch } from "vue";
-import { message } from "ant-design-vue";
+import { message, theme } from "ant-design-vue";
+
+const themeConfig = {
+  algorithm: theme.defaultAlgorithm,
+  token: {
+    colorPrimary: "#c96f35",
+    colorSuccess: "#517d79",
+    colorInfo: "#6b8db5",
+    colorWarning: "#d4943a",
+    colorError: "#c0503e",
+    colorBgContainer: "rgba(255, 252, 248, 0.92)",
+    colorBgElevated: "rgba(255, 255, 255, 0.96)",
+    colorBgLayout: "transparent",
+    colorText: "#1f2937",
+    colorTextSecondary: "#5b6475",
+    colorBorder: "rgba(30, 41, 59, 0.10)",
+    colorBorderSecondary: "rgba(30, 41, 59, 0.06)",
+    borderRadius: 10,
+    borderRadiusLG: 14,
+    borderRadiusSM: 8,
+    fontFamily:
+      '"Microsoft YaHei UI", "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif',
+    fontSize: 14,
+    controlHeight: 38,
+    wireframe: false
+  },
+  components: {
+    Button: {
+      borderRadius: 999,
+      borderRadiusLG: 999,
+      borderRadiusSM: 999,
+      controlHeight: 34,
+      paddingInline: 18,
+      fontWeight: 500
+    },
+    Input: {
+      borderRadius: 12,
+      controlHeight: 38,
+      colorBgContainer: "rgba(255, 255, 255, 0.92)"
+    },
+    Steps: {
+      colorPrimary: "#c96f35",
+      fontWeightStrong: 700
+    },
+    Form: {
+      labelFontSize: 12,
+      labelColor: "#5b6475",
+      itemMarginBottom: 12
+    },
+    Alert: {
+      borderRadiusLG: 14
+    },
+    Message: {
+      borderRadiusLG: 12
+    }
+  }
+};
 
 import ReportForm from "./components/ReportForm.vue";
 import MarkdownEditor from "./components/MarkdownEditor.vue";
@@ -206,6 +262,7 @@ function resetDraft() {
 </script>
 
 <template>
+  <a-config-provider :theme="themeConfig">
   <div class="shell">
     <section class="topbar">
       <a-steps :current="currentStep" :responsive="false" class="app-steps app-steps-plain">
@@ -305,4 +362,5 @@ function resetDraft() {
       </section>
     </div>
   </div>
+  </a-config-provider>
 </template>
