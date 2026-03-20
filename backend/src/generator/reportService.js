@@ -15,7 +15,12 @@ export async function generateReport({ form, markdown, wordStyle }) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const baseName = `${timestamp}-${slugify(form.project)}`;
   const docxFilename = `${baseName}.docx`;
-  const docxBuffer = await generateDocx({ form, ast, styleOverrides: wordStyle?.styleOverrides });
+  const docxBuffer = await generateDocx({
+    form,
+    ast,
+    styleOverrides: wordStyle?.styleOverrides,
+    imageCaptionMode: wordStyle?.imageCaption?.mode
+  });
   const stored = await saveReport(docxFilename, docxBuffer);
 
   return {
@@ -24,7 +29,8 @@ export async function generateReport({ form, markdown, wordStyle }) {
     wordStyle: wordStyle
       ? {
           fontSize: wordStyle.fontSize || null,
-          paragraphSpacing: wordStyle.paragraphSpacing || null
+          paragraphSpacing: wordStyle.paragraphSpacing || null,
+          imageCaption: wordStyle.imageCaption || null
         }
       : null
   };

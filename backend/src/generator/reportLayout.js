@@ -48,26 +48,69 @@ export function looksLikeGenericCaption(value) {
   return /^(img|image|screenshot|screen-shot|photo|picture)([-_\s]?\d+)?(\.[a-z0-9]+)?$/i.test(text);
 }
 
-export function annotateReportAst(ast) {
+export function annotateReportAst(ast, options = {}) {
   const counters = [0, 0, 0, 0];
+  const imageCounters = new Map();
+  const imageCaptionMode = options.imageCaptionMode || "keep";
+  let currentHeadingLabel = "";
+  let rootImageCount = 0;
 
   return ast.map((block) => {
-    if (block.type !== "heading") {
+    if (block.type === "heading") {
+      const safeLevel = Math.min(Math.max(block.level, 1), 4);
+      counters[safeLevel - 1] += 1;
+
+      for (let index = safeLevel; index < counters.length; index += 1) {
+        counters[index] = 0;
+      }
+
+      const headingLabel = safeLevel > 3 ? "" : counters.slice(0, safeLevel).join(".");
+      currentHeadingLabel = headingLabel;
+      return {
+        ...block,
+        headingLabel,
+        displayText: headingLabel ? `${headingLabel} ${block.text}` : block.text
+      };
+    }
+
+    if (block.type !== "image") {
       return block;
     }
 
-    const safeLevel = Math.min(Math.max(block.level, 1), 4);
-    counters[safeLevel - 1] += 1;
-
-    for (let index = safeLevel; index < counters.length; index += 1) {
-      counters[index] = 0;
+    if (imageCaptionMode === "off") {
+      return {
+        ...block,
+        showCaption: false,
+        displayCaption: ""
+      };
     }
 
-    const headingLabel = safeLevel > 3 ? "" : counters.slice(0, safeLevel).join(".");
+    if (imageCaptionMode !== "heading-numbered") {
+      return {
+        ...block,
+        showCaption: !looksLikeGenericCaption(block.caption),
+        displayCaption: block.caption
+      };
+    }
+
+    const scopedKey = currentHeadingLabel || "__root__";
+    const scopedCount = (imageCounters.get(scopedKey) || 0) + 1;
+    imageCounters.set(scopedKey, scopedCount);
+
+    if (!currentHeadingLabel) {
+      rootImageCount += 1;
+    }
+
+    const baseCaption = String(block.caption ?? "").trim();
+    const normalizedCaption = looksLikeGenericCaption(baseCaption) ? "图片" : baseCaption;
+    const figureNumber = currentHeadingLabel ? `图${currentHeadingLabel}-${scopedCount}` : `图${rootImageCount}`;
+
     return {
       ...block,
-      headingLabel,
-      displayText: headingLabel ? `${headingLabel} ${block.text}` : block.text
+      showCaption: true,
+      displayCaption: normalizedCaption ? `${figureNumber} ${normalizedCaption}` : figureNumber,
+      figureNumber,
+      headingLabel: currentHeadingLabel
     };
   });
 }

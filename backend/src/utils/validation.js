@@ -56,6 +56,8 @@ const WORD_SIZE_NAME_TO_PT = {
   "初号": 42
 };
 
+const IMAGE_CAPTION_MODES = new Set(["keep", "off", "heading-numbered"]);
+
 function clampNumber(value, { min, max, fallback }) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
@@ -134,9 +136,17 @@ function cleanText(value, maxLength = 120) {
     .slice(0, maxLength);
 }
 
+function normalizeImageCaption(value) {
+  const mode = String(value?.mode ?? "").trim().toLowerCase();
+  return {
+    mode: IMAGE_CAPTION_MODES.has(mode) ? mode : "keep"
+  };
+}
+
 function normalizeWordStyle(wordStyle = {}) {
   const preset = WORD_SIZE_PRESETS[wordStyle.preset] ? wordStyle.preset : "default";
   const baseFontSize = WORD_SIZE_PRESETS[preset];
+  const imageCaption = normalizeImageCaption(wordStyle.imageCaption || { mode: wordStyle.imageCaptionMode });
 
   if (wordStyle.preset !== "custom") {
     const normalizedFontSize = {
@@ -160,8 +170,12 @@ function normalizeWordStyle(wordStyle = {}) {
         code: {
           size: ptToHalfPoints(normalizedFontSize.code.pt),
           line: lineMultipleToTwips(paragraphSpacing.codeLineMultiple)
+        },
+        image: {
+          caption: imageCaption
         }
-      }
+      },
+      imageCaption
     };
   }
 
@@ -195,8 +209,12 @@ function normalizeWordStyle(wordStyle = {}) {
       code: {
         size: ptToHalfPoints(customFontSize.code.pt),
         line: lineMultipleToTwips(paragraphSpacing.codeLineMultiple)
+      },
+      image: {
+        caption: imageCaption
       }
-    }
+    },
+    imageCaption
   };
 }
 

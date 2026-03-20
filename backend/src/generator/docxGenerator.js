@@ -172,10 +172,11 @@ function inferImageType(filePath) {
 
 function createListParagraphs(block, styles) {
   return block.items.map((item, index) => {
-    const prefix = block.ordered ? `${index + 1}. ` : "• ";
+    const prefix = block.ordered ? `${index + 1}. ` : "";
     return new Paragraph({
+      alignment: AlignmentType.LEFT,
       spacing: { line: styles.body.line, after: styles.body.paragraphAfter },
-      indent: { left: 420 },
+      indent: block.ordered ? { left: 420, hanging: 280 } : undefined,
       children: textRunsFromContent(`${prefix}${item}`, {
         font: styles.body.docxFont,
         size: styles.body.size
@@ -292,7 +293,7 @@ async function createImageBlock(block, styles) {
     }
 
     const imageSize = fitImageSize(getImageDimensions(data), styles);
-    const showCaption = !looksLikeGenericCaption(block.caption);
+    const showCaption = block.showCaption ?? !looksLikeGenericCaption(block.caption);
     const imageType = inferImageType(block.src);
 
     return [
@@ -314,7 +315,7 @@ async function createImageBlock(block, styles) {
               spacing: { after: 180 },
               children: [
                 new TextRun({
-                  text: block.caption,
+                  text: block.displayCaption || block.caption,
                   font: styles.body.docxFont,
                   size: styles.body.size - 2,
                   color: "4B5563"
@@ -341,10 +342,10 @@ async function createImageBlock(block, styles) {
   }
 }
 
-async function createBodyChildren(ast, styles) {
+async function createBodyChildren(ast, styles, options = {}) {
   const children = [];
 
-  for (const block of annotateReportAst(ast)) {
+  for (const block of annotateReportAst(ast, options)) {
     if (block.type === "heading") {
       children.push(
         new Paragraph({
@@ -479,14 +480,16 @@ function createTemplatePatches(form, bodyChildren) {
   };
 }
 
-export async function generateDocx({ form, ast, styleOverrides = {} }) {
+export async function generateDocx({ form, ast, styleOverrides = {}, imageCaptionMode = "keep" }) {
   const [{ styles: rawStyles }, templateBuffer] = await Promise.all([
     loadTemplates(),
     fs.readFile(docxCoverTemplatePath)
   ]);
   const styles = normalizeReportStyles(mergeDeep(rawStyles, styleOverrides));
 
-  const bodyChildren = await createBodyChildren(ast, styles);
+  const bodyChildren = await createBodyChildren(ast, styles, {
+    imageCaptionMode
+  });
   return patchDocument({
     outputType: "nodebuffer",
     data: templateBuffer,

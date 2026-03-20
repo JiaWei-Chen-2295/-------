@@ -154,6 +154,21 @@ const WORD_SIZE_PRESETS = {
   }
 };
 
+const IMAGE_CAPTION_MODE_OPTIONS = {
+  keep: {
+    label: "保留题注",
+    description: "保留 Markdown 里原有的图片题注文本。"
+  },
+  off: {
+    label: "关闭题注",
+    description: "只插入图片，不生成图片题注。"
+  },
+  "heading-numbered": {
+    label: "按标题编号",
+    description: "按标题顺序自动编号图片题注。"
+  }
+};
+
 const today = new Date().toISOString().slice(0, 10);
 
 const defaultForm = {
@@ -174,10 +189,15 @@ function cloneWordFontSize(value) {
   };
 }
 
+function normalizeImageCaptionMode(value) {
+  return IMAGE_CAPTION_MODE_OPTIONS[value] ? value : "keep";
+}
+
 const defaultWordStyle = {
   preset: "default",
   fontSize: cloneWordFontSize(WORD_SIZE_PRESETS.default.fontSize),
-  paragraphSpacing: { ...WORD_SIZE_PRESETS.default.paragraphSpacing }
+  paragraphSpacing: { ...WORD_SIZE_PRESETS.default.paragraphSpacing },
+  imageCaptionMode: "keep"
 };
 
 function normalizeLocalWordStyle(value) {
@@ -185,7 +205,8 @@ function normalizeLocalWordStyle(value) {
     return {
       preset: defaultWordStyle.preset,
       fontSize: cloneWordFontSize(defaultWordStyle.fontSize),
-      paragraphSpacing: { ...defaultWordStyle.paragraphSpacing }
+      paragraphSpacing: { ...defaultWordStyle.paragraphSpacing },
+      imageCaptionMode: defaultWordStyle.imageCaptionMode
     };
   }
 
@@ -196,7 +217,8 @@ function normalizeLocalWordStyle(value) {
       paragraphSpacing: {
         ...defaultWordStyle.paragraphSpacing,
         ...value.paragraphSpacing
-      }
+      },
+      imageCaptionMode: normalizeImageCaptionMode(value.imageCaptionMode ?? value.captionMode)
     };
   }
 
@@ -224,14 +246,16 @@ function normalizeLocalWordStyle(value) {
           pt: value.fontSize?.codePt ?? 9
         }
       },
-      paragraphSpacing: { ...defaultWordStyle.paragraphSpacing }
+      paragraphSpacing: { ...defaultWordStyle.paragraphSpacing },
+      imageCaptionMode: normalizeImageCaptionMode(value.imageCaptionMode ?? value.captionMode)
     };
   }
 
   return {
     preset: defaultWordStyle.preset,
     fontSize: cloneWordFontSize(defaultWordStyle.fontSize),
-    paragraphSpacing: { ...defaultWordStyle.paragraphSpacing }
+    paragraphSpacing: { ...defaultWordStyle.paragraphSpacing },
+    imageCaptionMode: normalizeImageCaptionMode(value.imageCaptionMode ?? value.captionMode)
   };
 }
 
@@ -254,7 +278,8 @@ function cloneWordStyle(value) {
   return {
     preset: value.preset,
     fontSize: cloneWordFontSize(value.fontSize),
-    paragraphSpacing: cloneParagraphSpacing(value.paragraphSpacing)
+    paragraphSpacing: cloneParagraphSpacing(value.paragraphSpacing),
+    imageCaptionMode: normalizeImageCaptionMode(value.imageCaptionMode)
   };
 }
 
@@ -353,8 +378,11 @@ const activeWordPreset = computed(() =>
         description: "支持直接选择小五、五号、小四、四号等，也可以切换为 pt 微调。",
         fontSize: wordStyle.value.fontSize,
         paragraphSpacing: wordStyle.value.paragraphSpacing
-      }
+    }
     : WORD_SIZE_PRESETS[wordStyle.value.preset] || WORD_SIZE_PRESETS.default
+);
+const activeImageCaptionMode = computed(
+  () => IMAGE_CAPTION_MODE_OPTIONS[wordStyle.value.imageCaptionMode] || IMAGE_CAPTION_MODE_OPTIONS.keep
 );
 const effectiveWordFontSize = computed(() =>
   wordStyle.value.preset === "custom"
@@ -371,7 +399,7 @@ const wordStyleSummary = computed(() => {
   const spacing = effectiveParagraphSpacing.value;
   return `${activeWordPreset.value.label} · 正文 ${describeWordSize(body)} / 标题 ${describeWordSize(
     heading
-  )} / 代码 ${describeWordSize(code)} / 行距 ${spacing.bodyLineMultiple} 倍 / 段后 ${spacing.bodyAfterPt}pt`;
+  )} / 代码 ${describeWordSize(code)} / 行距 ${spacing.bodyLineMultiple} 倍 / 段后 ${spacing.bodyAfterPt}pt / 题注 ${activeImageCaptionMode.value.label}`;
 });
 const trimmedTemplateName = computed(() => wordStyleTemplateName.value.trim().slice(0, 24));
 
@@ -425,7 +453,8 @@ function updateWordPreset(preset) {
     paragraphSpacing:
       preset === "custom"
         ? cloneParagraphSpacing(wordStyle.value.paragraphSpacing)
-        : cloneParagraphSpacing(WORD_SIZE_PRESETS[preset].paragraphSpacing)
+        : cloneParagraphSpacing(WORD_SIZE_PRESETS[preset].paragraphSpacing),
+    imageCaptionMode: wordStyle.value.imageCaptionMode
   };
 }
 
@@ -496,6 +525,13 @@ function updateParagraphSpacing(field, value) {
   };
 }
 
+function updateImageCaptionMode(value) {
+  wordStyle.value = {
+    ...wordStyle.value,
+    imageCaptionMode: normalizeImageCaptionMode(value)
+  };
+}
+
 function saveWordStyleTemplate() {
   const templateName = trimmedTemplateName.value;
   if (!templateName) {
@@ -510,7 +546,8 @@ function saveWordStyleTemplate() {
     wordStyle: cloneWordStyle({
       preset: "custom",
       fontSize: effectiveWordFontSize.value,
-      paragraphSpacing: effectiveParagraphSpacing.value
+      paragraphSpacing: effectiveParagraphSpacing.value,
+      imageCaptionMode: wordStyle.value.imageCaptionMode
     })
   });
 
@@ -523,7 +560,8 @@ function applyWordStyleTemplate(template) {
   wordStyle.value = cloneWordStyle({
     preset: "custom",
     fontSize: template.wordStyle.fontSize,
-    paragraphSpacing: template.wordStyle.paragraphSpacing
+    paragraphSpacing: template.wordStyle.paragraphSpacing,
+    imageCaptionMode: template.wordStyle.imageCaptionMode
   });
   message.success(`已应用模板：${template.name}`);
 }
@@ -580,7 +618,8 @@ async function handleGenerate() {
       wordStyle: {
         preset: wordStyle.value.preset,
         fontSize: cloneWordFontSize(effectiveWordFontSize.value),
-        paragraphSpacing: cloneParagraphSpacing(effectiveParagraphSpacing.value)
+        paragraphSpacing: cloneParagraphSpacing(effectiveParagraphSpacing.value),
+        imageCaptionMode: wordStyle.value.imageCaptionMode
       }
     });
     currentStep.value = 2;
@@ -632,7 +671,8 @@ function resetDraft() {
   wordStyle.value = {
     ...defaultWordStyle,
     fontSize: cloneWordFontSize(defaultWordStyle.fontSize),
-    paragraphSpacing: cloneParagraphSpacing(defaultWordStyle.paragraphSpacing)
+    paragraphSpacing: cloneParagraphSpacing(defaultWordStyle.paragraphSpacing),
+    imageCaptionMode: defaultWordStyle.imageCaptionMode
   };
   wordStyleTemplates.value = [];
   wordStyleTemplateName.value = "";
@@ -738,6 +778,28 @@ function resetDraft() {
             </a-radio-group>
 
             <div class="result-empty word-style-hint">{{ activeWordPreset.description }}</div>
+
+            <section class="word-style-caption-panel">
+              <div class="panel-header panel-header-compact">
+                <h3>图片题注</h3>
+                <span>可以保留、关闭，或者按标题顺序自动编号。</span>
+              </div>
+
+              <a-radio-group
+                :value="wordStyle.imageCaptionMode"
+                class="word-style-caption-modes"
+                button-style="solid"
+                @update:value="updateImageCaptionMode"
+              >
+                <a-radio-button value="keep">{{ IMAGE_CAPTION_MODE_OPTIONS.keep.label }}</a-radio-button>
+                <a-radio-button value="off">{{ IMAGE_CAPTION_MODE_OPTIONS.off.label }}</a-radio-button>
+                <a-radio-button value="heading-numbered">
+                  {{ IMAGE_CAPTION_MODE_OPTIONS["heading-numbered"].label }}
+                </a-radio-button>
+              </a-radio-group>
+
+              <div class="result-empty word-style-hint">{{ activeImageCaptionMode.description }}</div>
+            </section>
 
             <section class="word-style-template-panel">
               <div class="word-style-template-toolbar">

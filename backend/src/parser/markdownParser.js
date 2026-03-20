@@ -105,7 +105,7 @@ function consumeList(tokens, startIndex) {
       }
 
       if (lines.length) {
-        items.push(lines.join(" "));
+        items.push(lines.join("\n"));
       }
     }
 
