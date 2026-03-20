@@ -10,16 +10,22 @@ function slugify(value) {
     .slice(0, 40) || "report";
 }
 
-export async function generateReport({ form, markdown }) {
+export async function generateReport({ form, markdown, wordStyle }) {
   const ast = parseMarkdownToAst(markdown);
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const baseName = `${timestamp}-${slugify(form.project)}`;
   const docxFilename = `${baseName}.docx`;
-  const docxBuffer = await generateDocx({ form, ast });
+  const docxBuffer = await generateDocx({ form, ast, styleOverrides: wordStyle?.styleOverrides });
   const stored = await saveReport(docxFilename, docxBuffer);
 
   return {
     docx: stored.downloadUrl,
-    blocks: ast.length
+    blocks: ast.length,
+    wordStyle: wordStyle
+      ? {
+          fontSize: wordStyle.fontSize || null,
+          paragraphSpacing: wordStyle.paragraphSpacing || null
+        }
+      : null
   };
 }

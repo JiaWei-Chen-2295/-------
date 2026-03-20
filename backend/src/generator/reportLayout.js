@@ -112,6 +112,7 @@ export function normalizeReportStyles(styles = {}) {
     body: {
       size: styles.body?.size ?? 24,
       line: styles.body?.line ?? 360,
+      paragraphAfter: styles.body?.paragraphAfter ?? 140,
       docxFont: bodyDocxFont,
       htmlFont: normalizeHtmlFontStack(styles.body?.htmlFont, [
         bodyDocxFont,

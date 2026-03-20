@@ -66,7 +66,92 @@ import { renderPreview } from "./markdown/preview.js";
 
 const STORAGE_KEYS = {
   form: "lab-report-form-draft",
-  markdown: "lab-report-markdown-draft"
+  markdown: "lab-report-markdown-draft",
+  wordStyle: "lab-report-word-style-draft",
+  wordStyleTemplates: "lab-report-word-style-templates"
+};
+
+const WORD_SIZE_OPTIONS = [
+  "八号",
+  "七号",
+  "小六",
+  "六号",
+  "小五",
+  "五号",
+  "小四",
+  "四号",
+  "小三",
+  "三号",
+  "小二",
+  "二号",
+  "小一",
+  "一号",
+  "小初",
+  "初号"
+];
+
+const WORD_SIZE_NAME_TO_PT = {
+  八号: 5,
+  七号: 5.5,
+  小六: 6.5,
+  六号: 7.5,
+  小五: 9,
+  五号: 10.5,
+  小四: 12,
+  四号: 14,
+  小三: 15,
+  三号: 16,
+  小二: 18,
+  二号: 22,
+  小一: 24,
+  一号: 26,
+  小初: 36,
+  初号: 42
+};
+
+const WORD_SIZE_PRESETS = {
+  default: {
+    label: "默认配置",
+    description: "正文小四、1.5 倍行距、段后 7pt，标题四号，代码小五",
+    fontSize: {
+      heading: { mode: "name", sizeName: "四号", pt: 14 },
+      body: { mode: "name", sizeName: "小四", pt: 12 },
+      code: { mode: "name", sizeName: "小五", pt: 9 }
+    },
+    paragraphSpacing: {
+      bodyLineMultiple: 1.5,
+      bodyAfterPt: 7,
+      codeLineMultiple: 1.17
+    }
+  },
+  compact: {
+    label: "紧凑版",
+    description: "正文五号、1.3 倍行距、段后 4pt，标题小四，代码小五",
+    fontSize: {
+      heading: { mode: "name", sizeName: "小四", pt: 12 },
+      body: { mode: "name", sizeName: "五号", pt: 10.5 },
+      code: { mode: "name", sizeName: "小五", pt: 9 }
+    },
+    paragraphSpacing: {
+      bodyLineMultiple: 1.3,
+      bodyAfterPt: 4,
+      codeLineMultiple: 1.1
+    }
+  },
+  large: {
+    label: "大字号",
+    description: "正文四号、1.75 倍行距、段后 10pt，标题三号，代码五号",
+    fontSize: {
+      heading: { mode: "name", sizeName: "三号", pt: 16 },
+      body: { mode: "name", sizeName: "四号", pt: 14 },
+      code: { mode: "name", sizeName: "五号", pt: 10.5 }
+    },
+    paragraphSpacing: {
+      bodyLineMultiple: 1.75,
+      bodyAfterPt: 10,
+      codeLineMultiple: 1.3
+    }
+  }
 };
 
 const today = new Date().toISOString().slice(0, 10);
@@ -80,6 +165,118 @@ const defaultForm = {
   studentId: "20220001",
   date: today
 };
+
+function cloneWordFontSize(value) {
+  return {
+    heading: { ...value.heading },
+    body: { ...value.body },
+    code: { ...value.code }
+  };
+}
+
+const defaultWordStyle = {
+  preset: "default",
+  fontSize: cloneWordFontSize(WORD_SIZE_PRESETS.default.fontSize),
+  paragraphSpacing: { ...WORD_SIZE_PRESETS.default.paragraphSpacing }
+};
+
+function normalizeLocalWordStyle(value) {
+  if (!value || typeof value !== "object") {
+    return {
+      preset: defaultWordStyle.preset,
+      fontSize: cloneWordFontSize(defaultWordStyle.fontSize),
+      paragraphSpacing: { ...defaultWordStyle.paragraphSpacing }
+    };
+  }
+
+  if (value.fontSize?.heading && value.fontSize?.body && value.fontSize?.code) {
+    return {
+      preset: value.preset || "default",
+      fontSize: cloneWordFontSize(value.fontSize),
+      paragraphSpacing: {
+        ...defaultWordStyle.paragraphSpacing,
+        ...value.paragraphSpacing
+      }
+    };
+  }
+
+  if (
+    value.fontSize?.headingPt != null ||
+    value.fontSize?.bodyPt != null ||
+    value.fontSize?.codePt != null
+  ) {
+    return {
+      preset: value.preset || "custom",
+      fontSize: {
+        heading: {
+          mode: "pt",
+          sizeName: "四号",
+          pt: value.fontSize?.headingPt ?? 14
+        },
+        body: {
+          mode: "pt",
+          sizeName: "小四",
+          pt: value.fontSize?.bodyPt ?? 12
+        },
+        code: {
+          mode: "pt",
+          sizeName: "小五",
+          pt: value.fontSize?.codePt ?? 9
+        }
+      },
+      paragraphSpacing: { ...defaultWordStyle.paragraphSpacing }
+    };
+  }
+
+  return {
+    preset: defaultWordStyle.preset,
+    fontSize: cloneWordFontSize(defaultWordStyle.fontSize),
+    paragraphSpacing: { ...defaultWordStyle.paragraphSpacing }
+  };
+}
+
+function describeWordSize(field) {
+  if (field.mode === "pt") {
+    return `${field.pt}pt`;
+  }
+  return `${field.sizeName} (${WORD_SIZE_NAME_TO_PT[field.sizeName]}pt)`;
+}
+
+function cloneParagraphSpacing(value) {
+  return {
+    bodyLineMultiple: value.bodyLineMultiple,
+    bodyAfterPt: value.bodyAfterPt,
+    codeLineMultiple: value.codeLineMultiple
+  };
+}
+
+function cloneWordStyle(value) {
+  return {
+    preset: value.preset,
+    fontSize: cloneWordFontSize(value.fontSize),
+    paragraphSpacing: cloneParagraphSpacing(value.paragraphSpacing)
+  };
+}
+
+function normalizeWordStyleTemplate(template, index = 0) {
+  const normalizedStyle = normalizeLocalWordStyle(template?.wordStyle);
+  const name = String(template?.name ?? "").trim() || `模板 ${index + 1}`;
+  return {
+    id: String(template?.id ?? `${Date.now()}-${index}`),
+    name: name.slice(0, 24),
+    wordStyle: cloneWordStyle(normalizedStyle)
+  };
+}
+
+function loadWordStyleTemplates() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEYS.wordStyleTemplates);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeWordStyleTemplate) : [];
+  } catch {
+    return [];
+  }
+}
 
 function loadStoredJson(key, fallback) {
   try {
@@ -100,6 +297,9 @@ function loadStoredMarkdown() {
 
 const form = ref(loadStoredJson(STORAGE_KEYS.form, defaultForm));
 const markdown = ref(loadStoredMarkdown());
+const wordStyle = ref(normalizeLocalWordStyle(loadStoredJson(STORAGE_KEYS.wordStyle, defaultWordStyle)));
+const wordStyleTemplates = ref(loadWordStyleTemplates());
+const wordStyleTemplateName = ref("");
 const currentStep = ref(0);
 const result = ref(null);
 const generating = ref(false);
@@ -146,6 +346,34 @@ const formSummary = computed(() => [
   { label: "学号", value: form.value.studentId },
   { label: "日期", value: form.value.date }
 ]);
+const activeWordPreset = computed(() =>
+  wordStyle.value.preset === "custom"
+    ? {
+        label: "自定义",
+        description: "支持直接选择小五、五号、小四、四号等，也可以切换为 pt 微调。",
+        fontSize: wordStyle.value.fontSize,
+        paragraphSpacing: wordStyle.value.paragraphSpacing
+      }
+    : WORD_SIZE_PRESETS[wordStyle.value.preset] || WORD_SIZE_PRESETS.default
+);
+const effectiveWordFontSize = computed(() =>
+  wordStyle.value.preset === "custom"
+    ? wordStyle.value.fontSize
+    : activeWordPreset.value.fontSize
+);
+const effectiveParagraphSpacing = computed(() =>
+  wordStyle.value.preset === "custom"
+    ? wordStyle.value.paragraphSpacing
+    : activeWordPreset.value.paragraphSpacing
+);
+const wordStyleSummary = computed(() => {
+  const { body, heading, code } = effectiveWordFontSize.value;
+  const spacing = effectiveParagraphSpacing.value;
+  return `${activeWordPreset.value.label} · 正文 ${describeWordSize(body)} / 标题 ${describeWordSize(
+    heading
+  )} / 代码 ${describeWordSize(code)} / 行距 ${spacing.bodyLineMultiple} 倍 / 段后 ${spacing.bodyAfterPt}pt`;
+});
+const trimmedTemplateName = computed(() => wordStyleTemplateName.value.trim().slice(0, 24));
 
 watch(
   form,
@@ -166,6 +394,144 @@ watch(markdown, (value) => {
     minute: "2-digit"
   })}`;
 });
+
+watch(
+  wordStyle,
+  (value) => {
+    window.localStorage.setItem(STORAGE_KEYS.wordStyle, JSON.stringify(value));
+    saveStatus.value = `导出样式已自动保存 ${new Date().toLocaleTimeString("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit"
+    })}`;
+  },
+  { deep: true }
+);
+
+watch(
+  wordStyleTemplates,
+  (value) => {
+    window.localStorage.setItem(STORAGE_KEYS.wordStyleTemplates, JSON.stringify(value));
+  },
+  { deep: true }
+);
+
+function updateWordPreset(preset) {
+  wordStyle.value = {
+    preset,
+    fontSize:
+      preset === "custom"
+        ? cloneWordFontSize(wordStyle.value.fontSize)
+        : cloneWordFontSize(WORD_SIZE_PRESETS[preset].fontSize),
+    paragraphSpacing:
+      preset === "custom"
+        ? cloneParagraphSpacing(wordStyle.value.paragraphSpacing)
+        : cloneParagraphSpacing(WORD_SIZE_PRESETS[preset].paragraphSpacing)
+  };
+}
+
+function updateWordFontMode(field, mode) {
+  const current = wordStyle.value.fontSize[field];
+  const sizeName = current.sizeName || "小四";
+  wordStyle.value = {
+    ...wordStyle.value,
+    preset: "custom",
+    fontSize: {
+      ...wordStyle.value.fontSize,
+      [field]: {
+        ...current,
+        mode,
+        pt: mode === "pt" ? current.pt ?? WORD_SIZE_NAME_TO_PT[sizeName] : WORD_SIZE_NAME_TO_PT[sizeName]
+      }
+    }
+  };
+}
+
+function updateWordFontSizeName(field, sizeName) {
+  const safeSizeName = WORD_SIZE_NAME_TO_PT[sizeName] ? sizeName : "小四";
+  const current = wordStyle.value.fontSize[field];
+  wordStyle.value = {
+    ...wordStyle.value,
+    preset: "custom",
+    fontSize: {
+      ...wordStyle.value.fontSize,
+      [field]: {
+        ...current,
+        sizeName: safeSizeName,
+        pt: current.mode === "pt" ? current.pt : WORD_SIZE_NAME_TO_PT[safeSizeName]
+      }
+    }
+  };
+}
+
+function updateWordFontPt(field, value) {
+  if (value == null) {
+    return;
+  }
+
+  wordStyle.value = {
+    ...wordStyle.value,
+    preset: "custom",
+    fontSize: {
+      ...wordStyle.value.fontSize,
+      [field]: {
+        ...wordStyle.value.fontSize[field],
+        pt: value
+      }
+    }
+  };
+}
+
+function updateParagraphSpacing(field, value) {
+  if (value == null) {
+    return;
+  }
+
+  wordStyle.value = {
+    ...wordStyle.value,
+    preset: "custom",
+    paragraphSpacing: {
+      ...wordStyle.value.paragraphSpacing,
+      [field]: value
+    }
+  };
+}
+
+function saveWordStyleTemplate() {
+  const templateName = trimmedTemplateName.value;
+  if (!templateName) {
+    message.warning("先给模板起个名字");
+    return;
+  }
+
+  const nextTemplates = wordStyleTemplates.value.filter((item) => item.name !== templateName);
+  nextTemplates.unshift({
+    id: `${Date.now()}`,
+    name: templateName,
+    wordStyle: cloneWordStyle({
+      preset: "custom",
+      fontSize: effectiveWordFontSize.value,
+      paragraphSpacing: effectiveParagraphSpacing.value
+    })
+  });
+
+  wordStyleTemplates.value = nextTemplates.slice(0, 12);
+  wordStyleTemplateName.value = "";
+  message.success("样式模板已保存");
+}
+
+function applyWordStyleTemplate(template) {
+  wordStyle.value = cloneWordStyle({
+    preset: "custom",
+    fontSize: template.wordStyle.fontSize,
+    paragraphSpacing: template.wordStyle.paragraphSpacing
+  });
+  message.success(`已应用模板：${template.name}`);
+}
+
+function deleteWordStyleTemplate(templateId) {
+  wordStyleTemplates.value = wordStyleTemplates.value.filter((item) => item.id !== templateId);
+  message.success("模板已删除");
+}
 
 function appendImageReference(fileName, url) {
   const rawLabel = fileName.replace(/\.[^.]+$/, "").trim();
@@ -210,7 +576,12 @@ async function handleGenerate() {
   try {
     result.value = await generateReport({
       form: form.value,
-      markdown: markdown.value
+      markdown: markdown.value,
+      wordStyle: {
+        preset: wordStyle.value.preset,
+        fontSize: cloneWordFontSize(effectiveWordFontSize.value),
+        paragraphSpacing: cloneParagraphSpacing(effectiveParagraphSpacing.value)
+      }
     });
     currentStep.value = 2;
     message.success("报告生成成功");
@@ -256,6 +627,15 @@ function resetDraft() {
   currentStep.value = 0;
   window.localStorage.removeItem(STORAGE_KEYS.form);
   window.localStorage.removeItem(STORAGE_KEYS.markdown);
+  window.localStorage.removeItem(STORAGE_KEYS.wordStyle);
+  window.localStorage.removeItem(STORAGE_KEYS.wordStyleTemplates);
+  wordStyle.value = {
+    ...defaultWordStyle,
+    fontSize: cloneWordFontSize(defaultWordStyle.fontSize),
+    paragraphSpacing: cloneParagraphSpacing(defaultWordStyle.paragraphSpacing)
+  };
+  wordStyleTemplates.value = [];
+  wordStyleTemplateName.value = "";
   saveStatus.value = "本地草稿已清空";
   message.success("已重置为默认示例");
 }
@@ -329,11 +709,198 @@ function resetDraft() {
               <span>图片数量</span>
               <strong>{{ markdownStats.imageCount }} 张</strong>
             </div>
+            <div class="summary-item">
+              <span>Word 字号</span>
+              <strong>{{ wordStyleSummary }}</strong>
+            </div>
             <div v-if="result" class="summary-item">
               <span>最近一次生成</span>
               <strong>共解析 {{ result.blocks }} 个内容块</strong>
             </div>
           </div>
+
+          <section class="word-style-panel">
+            <div class="panel-header panel-header-compact">
+              <h3>导出字号</h3>
+              <span>提供默认配置，也支持按 Word 字号自定义。</span>
+            </div>
+
+            <a-radio-group
+              :value="wordStyle.preset"
+              class="word-style-presets"
+              button-style="solid"
+              @update:value="updateWordPreset"
+            >
+              <a-radio-button value="default">默认</a-radio-button>
+              <a-radio-button value="compact">紧凑</a-radio-button>
+              <a-radio-button value="large">大号</a-radio-button>
+              <a-radio-button value="custom">自定义</a-radio-button>
+            </a-radio-group>
+
+            <div class="result-empty word-style-hint">{{ activeWordPreset.description }}</div>
+
+            <section class="word-style-template-panel">
+              <div class="word-style-template-toolbar">
+                <a-input
+                  :value="wordStyleTemplateName"
+                  placeholder="例如：课程报告标准版"
+                  maxlength="24"
+                  @update:value="wordStyleTemplateName = $event"
+                />
+                <a-button @click="saveWordStyleTemplate">保存为模板</a-button>
+              </div>
+
+              <div v-if="wordStyleTemplates.length" class="word-style-template-list">
+                <div
+                  v-for="template in wordStyleTemplates"
+                  :key="template.id"
+                  class="word-style-template-item"
+                >
+                  <div class="word-style-template-meta">
+                    <strong>{{ template.name }}</strong>
+                    <span>
+                      {{
+                        `${describeWordSize(template.wordStyle.fontSize.body)} / 行距 ${template.wordStyle.paragraphSpacing.bodyLineMultiple} 倍 / 段后 ${template.wordStyle.paragraphSpacing.bodyAfterPt}pt`
+                      }}
+                    </span>
+                  </div>
+                  <div class="word-style-template-actions">
+                    <a-button size="small" @click="applyWordStyleTemplate(template)">应用</a-button>
+                    <a-button size="small" danger @click="deleteWordStyleTemplate(template.id)">
+                      删除
+                    </a-button>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="result-empty word-style-template-empty">
+                还没有保存的样式模板，调整好字号和段落后可以先存一个。
+              </div>
+            </section>
+
+            <div v-if="wordStyle.preset === 'custom'" class="word-style-grid">
+              <a-form layout="vertical">
+                <div class="form-grid word-style-form-grid">
+                  <a-form-item label="标题字号">
+                    <div class="word-style-field">
+                      <a-radio-group
+                        :value="wordStyle.fontSize.heading.mode"
+                        size="small"
+                        @update:value="updateWordFontMode('heading', $event)"
+                      >
+                        <a-radio-button value="name">中文字号</a-radio-button>
+                        <a-radio-button value="pt">pt</a-radio-button>
+                      </a-radio-group>
+                      <a-select
+                        v-if="wordStyle.fontSize.heading.mode === 'name'"
+                        :value="wordStyle.fontSize.heading.sizeName"
+                        :options="WORD_SIZE_OPTIONS.map((item) => ({ value: item, label: `${item} (${WORD_SIZE_NAME_TO_PT[item]}pt)` }))"
+                        class="word-style-input"
+                        @update:value="updateWordFontSizeName('heading', $event)"
+                      />
+                      <a-input-number
+                        v-else
+                        :value="wordStyle.fontSize.heading.pt"
+                        :min="10"
+                        :max="28"
+                        :step="0.5"
+                        class="word-style-input"
+                        @update:value="updateWordFontPt('heading', $event)"
+                      />
+                    </div>
+                  </a-form-item>
+                  <a-form-item label="正文字号">
+                    <div class="word-style-field">
+                      <a-radio-group
+                        :value="wordStyle.fontSize.body.mode"
+                        size="small"
+                        @update:value="updateWordFontMode('body', $event)"
+                      >
+                        <a-radio-button value="name">中文字号</a-radio-button>
+                        <a-radio-button value="pt">pt</a-radio-button>
+                      </a-radio-group>
+                      <a-select
+                        v-if="wordStyle.fontSize.body.mode === 'name'"
+                        :value="wordStyle.fontSize.body.sizeName"
+                        :options="WORD_SIZE_OPTIONS.map((item) => ({ value: item, label: `${item} (${WORD_SIZE_NAME_TO_PT[item]}pt)` }))"
+                        class="word-style-input"
+                        @update:value="updateWordFontSizeName('body', $event)"
+                      />
+                      <a-input-number
+                        v-else
+                        :value="wordStyle.fontSize.body.pt"
+                        :min="9"
+                        :max="24"
+                        :step="0.5"
+                        class="word-style-input"
+                        @update:value="updateWordFontPt('body', $event)"
+                      />
+                    </div>
+                  </a-form-item>
+                  <a-form-item label="代码字号">
+                    <div class="word-style-field">
+                      <a-radio-group
+                        :value="wordStyle.fontSize.code.mode"
+                        size="small"
+                        @update:value="updateWordFontMode('code', $event)"
+                      >
+                        <a-radio-button value="name">中文字号</a-radio-button>
+                        <a-radio-button value="pt">pt</a-radio-button>
+                      </a-radio-group>
+                      <a-select
+                        v-if="wordStyle.fontSize.code.mode === 'name'"
+                        :value="wordStyle.fontSize.code.sizeName"
+                        :options="WORD_SIZE_OPTIONS.map((item) => ({ value: item, label: `${item} (${WORD_SIZE_NAME_TO_PT[item]}pt)` }))"
+                        class="word-style-input"
+                        @update:value="updateWordFontSizeName('code', $event)"
+                      />
+                      <a-input-number
+                        v-else
+                        :value="wordStyle.fontSize.code.pt"
+                        :min="8"
+                        :max="20"
+                        :step="0.5"
+                        class="word-style-input"
+                        @update:value="updateWordFontPt('code', $event)"
+                      />
+                    </div>
+                  </a-form-item>
+                </div>
+
+                <div class="form-grid word-style-form-grid">
+                  <a-form-item label="正文行距（倍）">
+                    <a-input-number
+                      :value="wordStyle.paragraphSpacing.bodyLineMultiple"
+                      :min="1"
+                      :max="3"
+                      :step="0.1"
+                      class="word-style-input"
+                      @update:value="updateParagraphSpacing('bodyLineMultiple', $event)"
+                    />
+                  </a-form-item>
+                  <a-form-item label="段后间距（pt）">
+                    <a-input-number
+                      :value="wordStyle.paragraphSpacing.bodyAfterPt"
+                      :min="0"
+                      :max="24"
+                      :step="1"
+                      class="word-style-input"
+                      @update:value="updateParagraphSpacing('bodyAfterPt', $event)"
+                    />
+                  </a-form-item>
+                  <a-form-item label="代码行距（倍）">
+                    <a-input-number
+                      :value="wordStyle.paragraphSpacing.codeLineMultiple"
+                      :min="1"
+                      :max="2.5"
+                      :step="0.1"
+                      class="word-style-input"
+                      @update:value="updateParagraphSpacing('codeLineMultiple', $event)"
+                    />
+                  </a-form-item>
+                </div>
+              </a-form>
+            </div>
+          </section>
 
           <a-alert v-if="errorMessage" type="error" show-icon :message="errorMessage" />
 

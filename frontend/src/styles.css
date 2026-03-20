@@ -178,6 +178,13 @@ body::before {
   font-size: 1.2rem;
 }
 
+.panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .panel-header span,
 .result-empty,
 .report-form .ant-form-item-label>label,
@@ -449,6 +456,91 @@ body::before {
   gap: 8px;
 }
 
+.panel-header-compact {
+  padding: 0;
+}
+
+.word-style-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+}
+
+.word-style-presets {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.word-style-hint {
+  padding: 10px 12px;
+}
+
+.word-style-template-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.word-style-template-toolbar,
+.word-style-template-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.word-style-template-list {
+  display: grid;
+  gap: 8px;
+}
+
+.word-style-template-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+}
+
+.word-style-template-meta {
+  display: grid;
+  gap: 3px;
+}
+
+.word-style-template-meta strong {
+  font-size: 13px;
+}
+
+.word-style-template-meta span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.word-style-template-empty {
+  padding: 10px 12px;
+}
+
+.word-style-grid .ant-form {
+  margin: 0;
+}
+
+.word-style-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.word-style-field {
+  display: grid;
+  gap: 8px;
+}
+
+.word-style-input {
+  width: 100%;
+}
+
 .summary-item {
   display: flex;
   justify-content: space-between;
@@ -615,6 +707,17 @@ body::before {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .word-style-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .word-style-template-toolbar,
+  .word-style-template-item,
+  .word-style-template-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .report-form .ant-form-item {

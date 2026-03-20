@@ -36,6 +36,22 @@ const HEADING_MAP = {
 
 const CODE_TABLE_WIDTHS = [900, 8200];
 
+function mergeDeep(base, incoming) {
+  if (!incoming || typeof incoming !== "object") {
+    return base;
+  }
+
+  const result = { ...base };
+  for (const [key, value] of Object.entries(incoming)) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      result[key] = mergeDeep(base[key] ?? {}, value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 function textRunsFromContent(text, options = {}) {
   const segments = String(text ?? "").split("\n");
   return segments.flatMap((segment, index) => {
@@ -158,7 +174,7 @@ function createListParagraphs(block, styles) {
   return block.items.map((item, index) => {
     const prefix = block.ordered ? `${index + 1}. ` : "• ";
     return new Paragraph({
-      spacing: { after: 120 },
+      spacing: { line: styles.body.line, after: styles.body.paragraphAfter },
       indent: { left: 420 },
       children: textRunsFromContent(`${prefix}${item}`, {
         font: styles.body.docxFont,
@@ -338,7 +354,7 @@ async function createBodyChildren(ast, styles) {
             new TextRun({
               text: block.displayText,
               font: styles.title.docxFont,
-              size: styles.body.size + 4,
+              size: styles.title.size,
               bold: true,
               color: styles.title.color
             })
@@ -351,7 +367,7 @@ async function createBodyChildren(ast, styles) {
     if (block.type === "paragraph") {
       children.push(
         new Paragraph({
-          spacing: { line: styles.body.line, after: 140 },
+          spacing: { line: styles.body.line, after: styles.body.paragraphAfter },
           children: textRunsFromContent(block.text, {
             font: styles.body.docxFont,
             size: styles.body.size
@@ -463,12 +479,12 @@ function createTemplatePatches(form, bodyChildren) {
   };
 }
 
-export async function generateDocx({ form, ast }) {
+export async function generateDocx({ form, ast, styleOverrides = {} }) {
   const [{ styles: rawStyles }, templateBuffer] = await Promise.all([
     loadTemplates(),
     fs.readFile(docxCoverTemplatePath)
   ]);
-  const styles = normalizeReportStyles(rawStyles);
+  const styles = normalizeReportStyles(mergeDeep(rawStyles, styleOverrides));
 
   const bodyChildren = await createBodyChildren(ast, styles);
   return patchDocument({
