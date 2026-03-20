@@ -322,6 +322,7 @@ function loadStoredMarkdown() {
 
 const form = ref(loadStoredJson(STORAGE_KEYS.form, defaultForm));
 const markdown = ref(loadStoredMarkdown());
+const markdownEditorRef = ref(null);
 const wordStyle = ref(normalizeLocalWordStyle(loadStoredJson(STORAGE_KEYS.wordStyle, defaultWordStyle)));
 const wordStyleTemplates = ref(loadWordStyleTemplates());
 const wordStyleTemplateName = ref("");
@@ -571,22 +572,35 @@ function deleteWordStyleTemplate(templateId) {
   message.success("模板已删除");
 }
 
-function appendImageReference(fileName, url) {
+function buildImageReference(fileName, url) {
   const rawLabel = fileName.replace(/\.[^.]+$/, "").trim();
   const label = /^(img|image|screenshot|screen-shot)([-_\s]?\d+)?$/i.test(rawLabel)
     ? "运行截图"
     : rawLabel || "运行结果";
-  markdown.value = `${markdown.value.trimEnd()}\n\n![${label}](${url})\n`;
+  return `\n![${label}](${url})\n`;
 }
 
-async function handleUpload(file) {
+function insertTextBySelection(text, selection) {
+  const current = markdown.value;
+  const safeFrom = Math.max(0, Math.min(selection?.from ?? current.length, current.length));
+  const safeTo = Math.max(safeFrom, Math.min(selection?.to ?? safeFrom, current.length));
+  markdown.value = `${current.slice(0, safeFrom)}${text}${current.slice(safeTo)}`;
+}
+
+async function handleUpload(payload) {
+  const file = payload?.file || payload;
+  const selection = payload?.selection;
   uploading.value = true;
   errorMessage.value = "";
 
   try {
     const data = await uploadImage(file);
-    appendImageReference(file.name, data.url);
-    message.success("图片已上传并插入 Markdown");
+    if (markdownEditorRef.value?.insertImageMarkdown) {
+      markdownEditorRef.value.insertImageMarkdown(file.name, data.url);
+    } else {
+      insertTextBySelection(buildImageReference(file.name, data.url), selection);
+    }
+    message.success("图片已上传并插入到当前光标位置");
   } catch (error) {
     errorMessage.value = error.message;
     message.error(error.message);
@@ -720,6 +734,7 @@ function resetDraft() {
         </section>
 
         <MarkdownEditor
+          ref="markdownEditorRef"
           v-model="markdown"
           :preview-html="previewHtml"
           :uploading="uploading"
