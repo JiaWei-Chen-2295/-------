@@ -60,9 +60,8 @@ const themeConfig = {
 
 import ReportForm from "./components/ReportForm.vue";
 import MarkdownEditor from "./components/MarkdownEditor.vue";
-import { assetUrl, generateReport, uploadImage } from "./api/client.js";
+import { assetUrl, generateReport } from "./api/client.js";
 import { defaultMarkdown } from "./editor/defaultContent.js";
-import { renderPreview } from "./markdown/preview.js";
 
 const STORAGE_KEYS = {
   form: "lab-report-form-draft",
@@ -322,18 +321,15 @@ function loadStoredMarkdown() {
 
 const form = ref(loadStoredJson(STORAGE_KEYS.form, defaultForm));
 const markdown = ref(loadStoredMarkdown());
-const markdownEditorRef = ref(null);
 const wordStyle = ref(normalizeLocalWordStyle(loadStoredJson(STORAGE_KEYS.wordStyle, defaultWordStyle)));
 const wordStyleTemplates = ref(loadWordStyleTemplates());
 const wordStyleTemplateName = ref("");
 const currentStep = ref(0);
 const result = ref(null);
 const generating = ref(false);
-const uploading = ref(false);
 const errorMessage = ref("");
 const saveStatus = ref("已开启自动保存");
 
-const previewHtml = computed(() => renderPreview(markdown.value));
 const coverComplete = computed(() =>
   Object.values(form.value).every((value) => String(value ?? "").trim())
 );
@@ -572,43 +568,6 @@ function deleteWordStyleTemplate(templateId) {
   message.success("模板已删除");
 }
 
-function buildImageReference(fileName, url) {
-  const rawLabel = fileName.replace(/\.[^.]+$/, "").trim();
-  const label = /^(img|image|screenshot|screen-shot)([-_\s]?\d+)?$/i.test(rawLabel)
-    ? "运行截图"
-    : rawLabel || "运行结果";
-  return `\n![${label}](${url})\n`;
-}
-
-function insertTextBySelection(text, selection) {
-  const current = markdown.value;
-  const safeFrom = Math.max(0, Math.min(selection?.from ?? current.length, current.length));
-  const safeTo = Math.max(safeFrom, Math.min(selection?.to ?? safeFrom, current.length));
-  markdown.value = `${current.slice(0, safeFrom)}${text}${current.slice(safeTo)}`;
-}
-
-async function handleUpload(payload) {
-  const file = payload?.file || payload;
-  const selection = payload?.selection;
-  uploading.value = true;
-  errorMessage.value = "";
-
-  try {
-    const data = await uploadImage(file);
-    if (markdownEditorRef.value?.insertImageMarkdown) {
-      markdownEditorRef.value.insertImageMarkdown(file.name, data.url);
-    } else {
-      insertTextBySelection(buildImageReference(file.name, data.url), selection);
-    }
-    message.success("图片已上传并插入到当前光标位置");
-  } catch (error) {
-    errorMessage.value = error.message;
-    message.error(error.message);
-  } finally {
-    uploading.value = false;
-  }
-}
-
 async function handleGenerate() {
   if (!coverComplete.value) {
     currentStep.value = 0;
@@ -734,12 +693,7 @@ function resetDraft() {
         </section>
 
         <MarkdownEditor
-          ref="markdownEditorRef"
           v-model="markdown"
-          :preview-html="previewHtml"
-          :uploading="uploading"
-          @upload-file="handleUpload"
-          @paste-image="handleUpload"
           @insert-template="handleInsertTemplate"
         />
 
