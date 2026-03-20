@@ -10,6 +10,18 @@ const props = defineProps({
   modelValue: {
     type: String,
     required: true
+  },
+  saveStatus: {
+    type: String,
+    default: ""
+  },
+  stats: {
+    type: Object,
+    default: () => ({
+      lines: 0,
+      nonEmptyLines: 0,
+      imageCount: 0
+    })
   }
 });
 
@@ -127,12 +139,10 @@ defineExpose({
 <template>
   <section class="panel workspace-panel">
     <div class="panel-header panel-header-inline">
-      <div>
-        <p class="eyebrow">Markdown Workspace</p>
-        <h2>正文编辑与实时预览</h2>
-        <span>保留常用 Markdown 能力，支持目录导航、实时预览、图片粘贴/拖拽/上传。</span>
+      <div class="editor-header-copy">
+        <h2>正文</h2>
       </div>
-      <div class="editor-actions">
+      <div class="editor-actions editor-actions-compact">
         <a-button @click="emit('insert-template')">插入示例</a-button>
         <a-button :loading="uploading" @click="openFilePicker">上传图片</a-button>
         <input
@@ -144,10 +154,18 @@ defineExpose({
         />
       </div>
     </div>
+    <div class="editor-statusbar">
+      <span class="draft-status draft-status-inline">{{ saveStatus }}</span>
+      <div class="editor-status-pills">
+        <span class="stat-pill">总行数 {{ stats.lines }}</span>
+        <span class="stat-pill">有效内容 {{ stats.nonEmptyLines }}</span>
+        <span class="stat-pill">图片 {{ stats.imageCount }}</span>
+      </div>
+    </div>
 
     <div class="workspace-grid workspace-grid-editor">
       <div class="editor-pane editor-pane-rich">
-        <div class="pane-title">Markdown Editor</div>
+        <div class="pane-title">编辑器</div>
         <MdEditor
           ref="editorRef"
           :id="editorId"
@@ -171,7 +189,7 @@ defineExpose({
       </div>
 
       <aside class="preview-pane catalog-pane">
-        <div class="pane-title">Catalog</div>
+        <div class="pane-title">目录</div>
         <div class="catalog-pane-body">
           <p class="catalog-hint">长实验报告建议先按 `# / ## / ###` 分层，再通过目录快速跳转。</p>
           <MdCatalog :editor-id="editorId" class="catalog-widget" />

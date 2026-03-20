@@ -668,7 +668,6 @@ function resetDraft() {
         />
       </a-steps>
       <div class="draft-toolbar">
-        <span class="draft-status">{{ saveStatus }}</span>
         <a-button size="small" @click="resetDraft">清空草稿</a-button>
       </div>
     </section>
@@ -684,16 +683,10 @@ function resetDraft() {
       </section>
 
       <section v-else-if="currentStep === 1" class="stage-stack">
-        <section class="editor-meta">
-          <div class="launch-actions">
-            <span class="stat-pill">总行数 {{ markdownStats.lines }}</span>
-            <span class="stat-pill">有效内容 {{ markdownStats.nonEmptyLines }}</span>
-            <span class="stat-pill">图片 {{ markdownStats.imageCount }}</span>
-          </div>
-        </section>
-
         <MarkdownEditor
           v-model="markdown"
+          :save-status="saveStatus"
+          :stats="markdownStats"
           @insert-template="handleInsertTemplate"
         />
 
