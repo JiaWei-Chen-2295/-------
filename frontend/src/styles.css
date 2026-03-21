@@ -427,7 +427,7 @@ body::before {
 }
 
 .workspace-grid-editor {
-  grid-template-columns: minmax(0, 1.75fr) minmax(160px, 220px);
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 180px);
 }
 
 .editor-pane:focus-within {
@@ -453,6 +453,14 @@ body::before {
   min-width: 0;
 }
 
+.editor-toolbar-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .md-editor-shell {
   flex: 1;
   min-height: 0;
@@ -474,8 +482,75 @@ body::before {
   --md-theme-bg-color-inset: rgba(245, 239, 228, 0.72);
 }
 
+.editor-inline-actions {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.editor-inline-action {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(31, 41, 55, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 252, 248, 0.96);
+  color: #46515f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editor-inline-action:hover {
+  color: var(--accent-strong);
+  border-color: rgba(201, 111, 53, 0.26);
+  background: rgba(255, 248, 241, 0.98);
+}
+
+.editor-inline-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201, 111, 53, 0.16);
+}
+
+.editor-inline-action-divider {
+  position: relative;
+  margin-right: 10px;
+}
+
+.editor-inline-action-divider::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: -8px;
+  width: 1px;
+  height: 14px;
+  background: rgba(31, 41, 55, 0.1);
+}
+
+.editor-inline-action .upload-pending-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  margin-left: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+}
+
 .md-editor-shell .md-editor-toolbar-wrapper {
-  padding: 4px 8px;
+  padding: 4px 122px 4px 8px;
   background: rgba(255, 252, 248, 0.9);
 }
 
@@ -896,6 +971,22 @@ body::before {
     padding-inline: 10px;
   }
 
+  .editor-inline-actions {
+    top: 5px;
+    right: 8px;
+  }
+
+  .editor-inline-action {
+    min-width: 38px;
+    height: 26px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .md-editor-shell .md-editor-toolbar-wrapper {
+    padding-right: 112px;
+  }
+
   /* Stack editor panes vertically on mobile */
   .workspace-grid {
     grid-template-columns: 1fr;
@@ -929,6 +1020,15 @@ body::before {
   .editor-actions .ant-btn {
     flex: 1;
     min-width: 0;
+  }
+
+  .editor-inline-actions {
+    top: 38px;
+    right: 8px;
+  }
+
+  .md-editor-shell .md-editor-toolbar-wrapper {
+    padding-right: 8px;
   }
 
   .step-footer-actions {

@@ -47,7 +47,6 @@ const toolbars = [
   "code",
   "table",
   "link",
-  "image",
   "-",
   "revoke",
   "next",
@@ -148,21 +147,15 @@ defineExpose({
     <div class="panel-header panel-header-inline">
       <div class="editor-header-copy">
         <h2>正文</h2>
+        <span>图片支持直接粘贴截图，或点击“插入图片”统一上传。</span>
       </div>
-      <div class="editor-actions editor-actions-compact">
-        <a-button @click="emit('insert-template')">插入示例</a-button>
-        <a-button @click="openFilePicker">
-          上传图片
-          <span v-if="pendingUploads > 0" class="upload-pending-badge">{{ pendingUploads }}</span>
-        </a-button>
-        <input
-          ref="fileInput"
-          type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          hidden
-          @change="onFileChange"
-        />
-      </div>
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        hidden
+        @change="onFileChange"
+      />
     </div>
     <div class="editor-statusbar">
       <span class="draft-status draft-status-inline">{{ saveStatus }}</span>
@@ -176,26 +169,49 @@ defineExpose({
     <div class="workspace-grid workspace-grid-editor">
       <div class="editor-pane editor-pane-rich">
         <div class="pane-title">编辑器</div>
-        <MdEditor
-          ref="editorRef"
-          :id="editorId"
-          class="md-editor-shell"
-          :model-value="modelValue"
-          language="zh-CN"
-          theme="light"
-          preview-theme="smart-blue"
-          code-theme="atom"
-          :toolbars="toolbars"
-          :footers="footers"
-          :scroll-auto="true"
-          :show-code-row-number="true"
-          :no-mermaid="true"
-          :no-katex="true"
-          :no-highlight="false"
-          placeholder="# 输入实验内容"
-          @update:model-value="emit('update:modelValue', $event)"
-          @on-upload-img="handleUploadImg"
-        />
+        <div class="editor-toolbar-shell">
+          <MdEditor
+            ref="editorRef"
+            :id="editorId"
+            class="md-editor-shell"
+            :model-value="modelValue"
+            language="zh-CN"
+            theme="light"
+            preview-theme="smart-blue"
+            code-theme="atom"
+            :toolbars="toolbars"
+            :footers="footers"
+            :scroll-auto="true"
+            :show-code-row-number="true"
+            :no-mermaid="true"
+            :no-katex="true"
+            :no-highlight="false"
+            placeholder="# 输入实验内容"
+            @update:model-value="emit('update:modelValue', $event)"
+            @on-upload-img="handleUploadImg"
+          />
+          <div class="editor-inline-actions">
+            <button
+              class="editor-inline-action editor-inline-action-divider"
+              type="button"
+              title="插入示例"
+              aria-label="插入示例"
+              @click="emit('insert-template')"
+            >
+              示例
+            </button>
+            <button
+              class="editor-inline-action"
+              type="button"
+              title="插入图片"
+              aria-label="插入图片"
+              @click="openFilePicker"
+            >
+              图片
+              <span v-if="pendingUploads > 0" class="upload-pending-badge">{{ pendingUploads }}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <aside class="preview-pane catalog-pane">
