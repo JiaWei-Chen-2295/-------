@@ -581,6 +581,11 @@ async function handleGenerate() {
     return;
   }
 
+  if (/!\[[^\]]*\]\(blob:[^)]+\)/.test(markdown.value)) {
+    message.warning("仍有图片正在上传中，请稍后再试");
+    return;
+  }
+
   generating.value = true;
   errorMessage.value = "";
 

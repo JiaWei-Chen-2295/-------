@@ -30,7 +30,7 @@ const emit = defineEmits(["update:modelValue", "insert-template"]);
 const editorId = "lab-report-markdown-editor";
 const editorRef = ref(null);
 const fileInput = ref(null);
-const uploading = ref(false);
+const pendingUploads = ref(0);
 
 const toolbars = [
   "bold",
@@ -70,32 +70,42 @@ function normalizeImageMeta(fileName) {
   };
 }
 
-async function uploadFiles(files) {
-  uploading.value = true;
-
-  try {
-    const results = await Promise.all(
-      files.map(async (file) => {
-        const data = await uploadImage(file);
-        return {
-          url: data.url,
-          ...normalizeImageMeta(file.name)
-        };
-      })
-    );
-    return results;
-  } finally {
-    uploading.value = false;
+function replaceBlobUrl(blobUrl, serverUrl) {
+  const content = props.modelValue;
+  if (content.includes(blobUrl)) {
+    emit("update:modelValue", content.replaceAll(blobUrl, serverUrl));
+    URL.revokeObjectURL(blobUrl);
   }
 }
 
-async function handleUploadImg(files, callback) {
-  try {
-    const uploaded = await uploadFiles(files);
-    callback(uploaded);
-    message.success(`已插入 ${uploaded.length} 张图片`);
-  } catch (error) {
-    message.error(error.message || "图片上传失败");
+function bgUpload(file, blobUrl) {
+  pendingUploads.value++;
+  uploadImage(file)
+    .then((data) => {
+      replaceBlobUrl(blobUrl, data.url);
+    })
+    .catch((error) => {
+      message.error(`图片「${file.name}」上传失败: ${error.message || "未知错误"}`);
+    })
+    .finally(() => {
+      pendingUploads.value--;
+      if (pendingUploads.value === 0) {
+        message.success("图片上传完成");
+      }
+    });
+}
+
+function handleUploadImg(files, callback) {
+  const entries = files.map((file) => ({
+    file,
+    blobUrl: URL.createObjectURL(file),
+    ...normalizeImageMeta(file.name)
+  }));
+
+  callback(entries.map((e) => ({ url: e.blobUrl, alt: e.alt, title: e.title })));
+
+  for (const { file, blobUrl } of entries) {
+    bgUpload(file, blobUrl);
   }
 }
 
@@ -107,14 +117,10 @@ function insertImageMarkdown(fileName, url) {
   editorRef.value?.focus();
 }
 
-async function handleManualUpload(file) {
-  try {
-    const [uploaded] = await uploadFiles([file]);
-    insertImageMarkdown(file.name, uploaded.url);
-    message.success("图片已插入到当前光标位置");
-  } catch (error) {
-    message.error(error.message || "图片上传失败");
-  }
+function handleManualUpload(file) {
+  const blobUrl = URL.createObjectURL(file);
+  insertImageMarkdown(file.name, blobUrl);
+  bgUpload(file, blobUrl);
 }
 
 function openFilePicker() {
@@ -132,7 +138,8 @@ function onFileChange(event) {
 
 defineExpose({
   insertImageMarkdown,
-  focus: (options) => editorRef.value?.focus(options)
+  focus: (options) => editorRef.value?.focus(options),
+  hasPendingUploads: () => pendingUploads.value > 0
 });
 </script>
 
@@ -144,7 +151,10 @@ defineExpose({
       </div>
       <div class="editor-actions editor-actions-compact">
         <a-button @click="emit('insert-template')">插入示例</a-button>
-        <a-button :loading="uploading" @click="openFilePicker">上传图片</a-button>
+        <a-button @click="openFilePicker">
+          上传图片
+          <span v-if="pendingUploads > 0" class="upload-pending-badge">{{ pendingUploads }}</span>
+        </a-button>
         <input
           ref="fileInput"
           type="file"
