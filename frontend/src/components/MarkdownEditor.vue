@@ -116,10 +116,32 @@ function insertImageMarkdown(fileName, url) {
   editorRef.value?.focus();
 }
 
-function handleManualUpload(file) {
-  const blobUrl = URL.createObjectURL(file);
-  insertImageMarkdown(file.name, blobUrl);
-  bgUpload(file, blobUrl);
+function handleManualUpload(files) {
+  const validFiles = Array.from(files || []);
+  if (validFiles.length === 0) {
+    return;
+  }
+
+  const entries = validFiles.map((file) => ({
+    file,
+    blobUrl: URL.createObjectURL(file)
+  }));
+
+  const markdownBlock = entries
+    .map(({ file, blobUrl }) => {
+      const { alt } = normalizeImageMeta(file.name);
+      return `![${alt}](${blobUrl})`;
+    })
+    .join("\n\n");
+
+  editorRef.value?.insert(() => ({
+    targetValue: `\n${markdownBlock}\n`
+  }));
+  editorRef.value?.focus();
+
+  for (const { file, blobUrl } of entries) {
+    bgUpload(file, blobUrl);
+  }
 }
 
 function openFilePicker() {
@@ -128,10 +150,7 @@ function openFilePicker() {
 }
 
 function onFileChange(event) {
-  const [file] = event.target.files || [];
-  if (file) {
-    handleManualUpload(file);
-  }
+  handleManualUpload(event.target.files);
   event.target.value = "";
 }
 
@@ -147,12 +166,13 @@ defineExpose({
     <div class="panel-header panel-header-inline">
       <div class="editor-header-copy">
         <h2>正文</h2>
-        <span>图片支持直接粘贴截图，或点击“插入图片”统一上传。</span>
+        <span>图片支持直接粘贴截图，也支持一次选择多张图片批量插入上传。</span>
       </div>
       <input
         ref="fileInput"
         type="file"
         accept="image/png,image/jpeg,image/webp,image/gif"
+        multiple
         hidden
         @change="onFileChange"
       />
@@ -203,8 +223,8 @@ defineExpose({
             <button
               class="editor-inline-action"
               type="button"
-              title="插入图片"
-              aria-label="插入图片"
+              title="批量插入图片"
+              aria-label="批量插入图片"
               @click="openFilePicker"
             >
               图片
