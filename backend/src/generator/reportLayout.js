@@ -48,6 +48,20 @@ export function looksLikeGenericCaption(value) {
   return /^(img|image|screenshot|screen-shot|photo|picture)([-_\s]?\d+)?(\.[a-z0-9]+)?$/i.test(text);
 }
 
+function headingTextHasExplicitNumbering(value) {
+  const text = String(value ?? "").trim();
+  if (!text) {
+    return false;
+  }
+
+  return (
+    /^\d+(?:\.\d+)*(?:[.、．])?\s+/.test(text) ||
+    /^[（(]?\d+[）)]\s*/.test(text) ||
+    /^[一二三四五六七八九十百千万零]+[、.．]\s*/.test(text) ||
+    /^[（(][一二三四五六七八九十百千万零]+[）)]\s*/.test(text)
+  );
+}
+
 export function annotateReportAst(ast, options = {}) {
   const counters = [0, 0, 0, 0];
   const imageCounters = new Map();
@@ -66,10 +80,12 @@ export function annotateReportAst(ast, options = {}) {
 
       const headingLabel = safeLevel > 3 ? "" : counters.slice(0, safeLevel).join(".");
       currentHeadingLabel = headingLabel;
+      const hasExplicitNumbering = headingTextHasExplicitNumbering(block.text);
+
       return {
         ...block,
         headingLabel,
-        displayText: headingLabel ? `${headingLabel} ${block.text}` : block.text
+        displayText: headingLabel && !hasExplicitNumbering ? `${headingLabel} ${block.text}` : block.text
       };
     }
 
