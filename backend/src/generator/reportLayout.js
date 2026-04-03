@@ -147,7 +147,7 @@ export function twipsToMm(value, fallback = 0) {
 export function normalizeReportStyles(styles = {}) {
   const titleDocxFont = styles.title?.docxFont || styles.title?.font || "Microsoft YaHei";
   const bodyDocxFont = styles.body?.docxFont || styles.body?.font || "Microsoft YaHei";
-  const codeDocxFont = styles.code?.docxFont || styles.code?.font || "Consolas";
+  const codeDocxFont = styles.code?.docxFont || styles.code?.font || "Courier New";
 
   return {
     page: {
@@ -188,6 +188,7 @@ export function normalizeReportStyles(styles = {}) {
       docxFont: codeDocxFont,
       htmlFont: normalizeHtmlFontStack(styles.code?.htmlFont, [
         codeDocxFont,
+        "Consolas",
         "Cascadia Mono",
         "Noto Sans Mono CJK SC",
         "monospace"

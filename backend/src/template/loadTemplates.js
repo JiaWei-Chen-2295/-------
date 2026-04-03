@@ -47,11 +47,11 @@ const DEFAULT_STYLES = {
     line: 360
   },
   code: {
-    font: "Consolas",
-    htmlFont: ["Consolas", "Cascadia Mono", "Noto Sans Mono CJK SC", "monospace"],
+    font: "Courier New",
+    htmlFont: ["Courier New", "Consolas", "Cascadia Mono", "Noto Sans Mono CJK SC", "monospace"],
     size: 18,
     line: 280,
-    background: "F6F7FB"
+    background: "FFFFFF"
   },
   cover: {
     schoolFont: ["Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "sans-serif"],

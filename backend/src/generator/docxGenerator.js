@@ -8,6 +8,7 @@ import {
   PatchType,
   Table,
   TableCell,
+  TableLayoutType,
   TableRow,
   TextRun,
   WidthType,
@@ -26,7 +27,46 @@ import {
   visualLength
 } from "./reportLayout.js";
 
-const CODE_TABLE_WIDTHS = [900, 8200];
+const CODE_TABLE_WIDTHS = [520, 8580];
+const CODE_BORDER_COLOR = "969696";
+const CODE_INNER_BORDER_COLOR = "D4D4D4";
+const CODE_BACKGROUND = "FFFFFF";
+const CODE_LINE_NUMBER_BACKGROUND = "FFFFFF";
+
+function createCodeMetaParagraph(text, styles, spacing = {}) {
+  return new Paragraph({
+    alignment: AlignmentType.LEFT,
+    spacing,
+    children: [
+      new TextRun({
+        text,
+        font: styles.body.docxFont,
+        size: styles.body.size - 5,
+        bold: true,
+        color: "2F2F2F"
+      })
+    ]
+  });
+}
+
+function createCodeCaption(block, styles) {
+  const language = String(block.language || "").trim().toLowerCase();
+  const readableLanguage = language && !["text", "txt", "plain", "plaintext"].includes(language) ? language.toUpperCase() : "";
+
+  if (block.filename) {
+    return createCodeMetaParagraph(
+      readableLanguage ? `代码清单  ${block.filename}（${readableLanguage}）` : `代码清单  ${block.filename}`,
+      styles,
+      { before: 140, after: 36 }
+    );
+  }
+
+  if (readableLanguage) {
+    return createCodeMetaParagraph(`代码清单（${readableLanguage}）`, styles, { before: 140, after: 36 });
+  }
+
+  return null;
+}
 
 function getHeadingTextSize(level, baseSize) {
   const normalizedLevel = Math.min(Math.max(level, 1), 4);
@@ -209,32 +249,39 @@ function createListParagraphs(block, styles) {
 
 function createCodeBlock(block, styles) {
   const lines = String(block.content ?? "").split("\n");
+  const codeBackground = styles.code.background || CODE_BACKGROUND;
+  const compactCodeLine = Math.max(200, styles.code.line - 70);
+  const captionParagraph = createCodeCaption(block, styles);
   const rows = lines.map((line, index) =>
     new TableRow({
       children: [
         new TableCell({
-          width: { size: 900, type: WidthType.DXA },
-          shading: { fill: styles.code.background || "F6F7FB" },
+          width: { size: CODE_TABLE_WIDTHS[0], type: WidthType.DXA },
+          shading: { fill: CODE_LINE_NUMBER_BACKGROUND },
+          margins: { top: 18, bottom: 18, left: 36, right: 36 },
           children: [
             new Paragraph({
               alignment: AlignmentType.RIGHT,
+              spacing: { before: 0, after: 0, line: compactCodeLine },
               children: [
                 new TextRun({
                   text: String(index + 1),
                   font: styles.code.docxFont,
-                  size: styles.code.size,
-                  color: "6B7280"
+                  size: Math.max(14, styles.code.size - 4),
+                  color: "7A7A7A"
                 })
               ]
             })
           ]
         }),
         new TableCell({
-          width: { size: 8200, type: WidthType.DXA },
-          shading: { fill: styles.code.background || "F6F7FB" },
+          width: { size: CODE_TABLE_WIDTHS[1], type: WidthType.DXA },
+          shading: { fill: codeBackground },
+          margins: { top: 18, bottom: 18, left: 72, right: 72 },
           children: [
             new Paragraph({
-              spacing: { line: styles.code.line },
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 0, after: 0, line: compactCodeLine },
               children: textRunsFromContent(line || " ", {
                 font: styles.code.docxFont,
                 size: styles.code.size
@@ -247,47 +294,23 @@ function createCodeBlock(block, styles) {
   );
 
   return [
-    ...(block.filename
-      ? [
-          new Paragraph({
-            spacing: { before: 200, after: 100 },
-            children: [
-              new TextRun({
-                text: block.filename,
-                font: styles.body.docxFont,
-                size: styles.body.size,
-                bold: true,
-                color: "1F2937"
-              })
-            ]
-          })
-        ]
-      : []),
-    new Paragraph({
-      spacing: { after: 80 },
-      children: [
-        new TextRun({
-          text: `语言：${block.language || "text"}`,
-          font: styles.body.docxFont,
-          size: styles.body.size - 2,
-          color: "5B6475"
-        })
-      ]
-    }),
+    ...(captionParagraph ? [captionParagraph] : []),
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       columnWidths: CODE_TABLE_WIDTHS,
+      layout: TableLayoutType.FIXED,
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
       rows,
       borders: {
-        top: { style: BorderStyle.SINGLE, color: "D7DEEA", size: 1 },
-        bottom: { style: BorderStyle.SINGLE, color: "D7DEEA", size: 1 },
-        left: { style: BorderStyle.SINGLE, color: "D7DEEA", size: 1 },
-        right: { style: BorderStyle.SINGLE, color: "D7DEEA", size: 1 },
-        insideHorizontal: { style: BorderStyle.SINGLE, color: "D7DEEA", size: 1 },
-        insideVertical: { style: BorderStyle.SINGLE, color: "D7DEEA", size: 1 }
+        top: { style: BorderStyle.SINGLE, color: CODE_BORDER_COLOR, size: 2 },
+        bottom: { style: BorderStyle.SINGLE, color: CODE_BORDER_COLOR, size: 2 },
+        left: { style: BorderStyle.SINGLE, color: CODE_BORDER_COLOR, size: 2 },
+        right: { style: BorderStyle.SINGLE, color: CODE_BORDER_COLOR, size: 2 },
+        insideHorizontal: { style: BorderStyle.SINGLE, color: CODE_INNER_BORDER_COLOR, size: 1 },
+        insideVertical: { style: BorderStyle.SINGLE, color: CODE_BORDER_COLOR, size: 1 }
       }
     }),
-    new Paragraph({ spacing: { after: 180 } })
+    new Paragraph({ spacing: { after: 100 } })
   ];
 }
 
