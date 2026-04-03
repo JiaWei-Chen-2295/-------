@@ -3,7 +3,6 @@ import fs from "node:fs/promises";
 import {
   AlignmentType,
   BorderStyle,
-  HeadingLevel,
   ImageRun,
   Paragraph,
   PatchType,
@@ -27,14 +26,37 @@ import {
   visualLength
 } from "./reportLayout.js";
 
-const HEADING_MAP = {
-  1: HeadingLevel.HEADING_1,
-  2: HeadingLevel.HEADING_2,
-  3: HeadingLevel.HEADING_3,
-  4: HeadingLevel.HEADING_4
-};
-
 const CODE_TABLE_WIDTHS = [900, 8200];
+
+function getHeadingTextSize(level, baseSize) {
+  const normalizedLevel = Math.min(Math.max(level, 1), 4);
+  const sizeOffsets = {
+    1: 0,
+    2: 4,
+    3: 6,
+    4: 8
+  };
+
+  return Math.max(20, baseSize - (sizeOffsets[normalizedLevel] ?? 8));
+}
+
+function createHeadingParagraph(block, styles) {
+  const level = Math.min(Math.max(block.level, 1), 9);
+
+  return new Paragraph({
+    outlineLevel: level - 1,
+    spacing: { before: 260, after: 120 },
+    children: [
+      new TextRun({
+        text: block.displayText,
+        font: styles.title.docxFont,
+        size: getHeadingTextSize(level, styles.title.size),
+        bold: true,
+        color: styles.title.color
+      })
+    ]
+  });
+}
 
 function mergeDeep(base, incoming) {
   if (!incoming || typeof incoming !== "object") {
@@ -347,21 +369,7 @@ async function createBodyChildren(ast, styles, options = {}) {
 
   for (const block of annotateReportAst(ast, options)) {
     if (block.type === "heading") {
-      children.push(
-        new Paragraph({
-          heading: HEADING_MAP[Math.min(block.level, 4)] || HeadingLevel.HEADING_4,
-          spacing: { before: 260, after: 120 },
-          children: [
-            new TextRun({
-              text: block.displayText,
-              font: styles.title.docxFont,
-              size: styles.title.size,
-              bold: true,
-              color: styles.title.color
-            })
-          ]
-        })
-      );
+      children.push(createHeadingParagraph(block, styles));
       continue;
     }
 
