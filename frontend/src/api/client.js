@@ -44,6 +44,17 @@ export async function uploadImage(file) {
   return parseResponse(response);
 }
 
+export async function listAdminReports(adminSecret) {
+  const response = await fetch(withBase("/admin-api/reports"), {
+    method: "GET",
+    headers: {
+      "x-admin-secret": String(adminSecret ?? "")
+    }
+  });
+
+  return parseResponse(response);
+}
+
 export function assetUrl(path) {
   return withBase(path);
 }

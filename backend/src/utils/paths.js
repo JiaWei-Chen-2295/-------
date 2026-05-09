@@ -10,8 +10,10 @@ const currentDir = path.dirname(currentFile);
 export const backendRoot = path.resolve(currentDir, "../..");
 export const projectRoot = path.resolve(backendRoot, "..");
 export const templatesDir = path.join(projectRoot, "templates");
+export const storageDir = path.join(backendRoot, "storage");
 export const imagesDir = path.join(backendRoot, "storage", "images");
 export const outputsDir = path.join(backendRoot, "storage", "outputs");
+export const reportIndexPath = path.join(storageDir, "report-index.json");
 export const frontendDistDir = path.join(projectRoot, "frontend", "dist");
 export const coverTemplatePath = path.join(templatesDir, "cover.json");
 export const styleTemplatePath = path.join(templatesDir, "styles.json");
@@ -23,6 +25,7 @@ export async function ensureRuntimeDirs() {
   }
 
   await Promise.all([
+    fs.mkdir(storageDir, { recursive: true }),
     fs.mkdir(imagesDir, { recursive: true }),
     fs.mkdir(outputsDir, { recursive: true })
   ]);

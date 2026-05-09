@@ -149,7 +149,7 @@ body::before {
 .workspace-panel,
 .result-panel,
 .stage-side {
-  padding: 16px;
+  padding: 20px;
 }
 
 .panel-header {
@@ -660,7 +660,7 @@ body::before {
 /* ─── Summary / Export ─── */
 .summary-list {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .panel-header-compact {
@@ -669,8 +669,8 @@ body::before {
 
 .word-style-panel {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 14px;
+  padding: 16px;
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(31, 41, 55, 0.08);
@@ -682,12 +682,22 @@ body::before {
 }
 
 .word-style-hint {
-  padding: 10px 12px;
+  padding: 8px 12px;
+}
+
+.word-style-caption-panel,
+.word-style-template-panel,
+.word-style-grid {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(31, 41, 55, 0.06);
 }
 
 .word-style-template-panel {
-  display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .word-style-template-toolbar,
@@ -699,7 +709,7 @@ body::before {
 
 .word-style-template-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .word-style-template-item {
@@ -707,7 +717,7 @@ body::before {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(31, 41, 55, 0.08);
@@ -728,7 +738,7 @@ body::before {
 }
 
 .word-style-template-empty {
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .word-style-grid .ant-form {
@@ -737,6 +747,7 @@ body::before {
 
 .word-style-form-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 10px;
 }
 
 .word-style-field {
@@ -753,7 +764,7 @@ body::before {
   justify-content: space-between;
   gap: 14px;
   align-items: center;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius-md);
   background: var(--paper-strong);
   border: 1px solid rgba(31, 41, 55, 0.05);
@@ -773,7 +784,7 @@ body::before {
 .result-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   overflow: auto;
 }
 
@@ -800,10 +811,65 @@ body::before {
 }
 
 .result-empty {
-  padding: 14px;
+  padding: 12px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   border: 1px dashed rgba(31, 41, 55, 0.08);
+}
+
+.admin-shell {
+  padding-top: 18px;
+}
+
+.admin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  overflow: auto;
+}
+
+.admin-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-filter-panel {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-filter-summary {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-secret-input {
+  width: min(460px, 100%);
+}
+
+.admin-table .ant-table-expanded-row > .ant-table-cell {
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-row-actions a,
+.admin-back-link {
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-row-actions a:hover,
+.admin-back-link:hover {
+  text-decoration: underline;
 }
 
 .step-footer-actions {
@@ -914,7 +980,13 @@ body::before {
   .workspace-panel,
   .result-panel,
   .stage-side {
-    padding: 12px;
+    padding: 14px;
+  }
+
+  .word-style-caption-panel,
+  .word-style-template-panel,
+  .word-style-grid {
+    padding: 10px;
   }
 
   .panel-header h2 {
@@ -938,6 +1010,15 @@ body::before {
 
   .report-form .ant-form-item {
     margin-bottom: 8px;
+  }
+
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-filter-panel {
+    grid-template-columns: 1fr;
   }
 
   .summary-item {

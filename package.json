@@ -10,6 +10,8 @@
   "scripts": {
     "dev:frontend": "npm --workspace frontend run dev",
     "dev:backend": "npm --workspace backend run dev",
+    "dev:all:sh": "bash ./scripts/dev-all.sh",
+    "dev:all:ps1": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-all.ps1",
     "build": "npm --workspace frontend run build",
     "start": "npm --workspace backend run start"
   }

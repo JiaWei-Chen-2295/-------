@@ -1,6 +1,7 @@
 import { generateDocx } from "./docxGenerator.js";
 import { parseMarkdownToAst } from "../parser/markdownParser.js";
 import { saveReport } from "../storage/objectStorage.js";
+import { appendReportRecord } from "../storage/reportIndex.js";
 
 function slugify(value) {
   return String(value)
@@ -12,7 +13,8 @@ function slugify(value) {
 
 export async function generateReport({ form, markdown, wordStyle }) {
   const ast = parseMarkdownToAst(markdown);
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const createdAt = new Date().toISOString();
+  const timestamp = createdAt.replace(/[:.]/g, "-");
   const baseName = `${timestamp}-${slugify(form.project)}`;
   const docxFilename = `${baseName}.docx`;
   const docxBuffer = await generateDocx({
@@ -22,6 +24,22 @@ export async function generateReport({ form, markdown, wordStyle }) {
     imageCaptionMode: wordStyle?.imageCaption?.mode
   });
   const stored = await saveReport(docxFilename, docxBuffer);
+  await appendReportRecord({
+    id: baseName,
+    createdAt,
+    form: {
+      course: form.course,
+      project: form.project,
+      department: form.department,
+      grade: form.grade,
+      name: form.name,
+      studentId: form.studentId,
+      date: form.date
+    },
+    blocks: ast.length,
+    docxFilename: stored.filename || docxFilename,
+    docxDownloadUrl: stored.downloadUrl
+  });
 
   return {
     docx: stored.downloadUrl,

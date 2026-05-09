@@ -8,6 +8,7 @@ import fastifyStatic from "@fastify/static";
 
 import { registerReportRoutes } from "./api/reportRoutes.js";
 import { registerUploadRoutes } from "./api/uploadRoutes.js";
+import { registerAdminRoutes } from "./api/adminRoutes.js";
 import {
   ensureRuntimeDirs,
   fileExists,
@@ -51,6 +52,7 @@ export async function buildApp() {
 
   await registerUploadRoutes(app);
   await registerReportRoutes(app);
+  await registerAdminRoutes(app);
 
   app.get("/health", async () => ({
     status: "ok",
@@ -70,6 +72,7 @@ export async function buildApp() {
       const assetLikeRequest =
         request.url.startsWith("/generate") ||
         request.url.startsWith("/upload") ||
+        request.url.startsWith("/admin-api") ||
         request.url.startsWith("/health") ||
         (canServeLocalFiles &&
           (request.url.startsWith("/download/") || request.url.startsWith("/images/")));
