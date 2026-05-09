@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
 import { message } from "ant-design-vue";
 import { MdCatalog, MdEditor } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
@@ -57,6 +57,44 @@ const toolbars = [
 
 const footers = ["markdownTotal", "scrollSwitch"];
 
+function getEditorRoot() {
+  return typeof document !== "undefined" ? document.getElementById(editorId) : null;
+}
+
+/** md-editor-v3 在外部 modelValue 变更时会重绑 scrollAuto，易把视窗拉回顶部；上传替 URL 时先拍照再恢复 */
+function captureEditorScroll() {
+  const root = getEditorRoot();
+  if (!root) return null;
+  const cmScroller = root.querySelector(".cm-scroller");
+  const preview = root.querySelector(`[id="${editorId}-preview-wrapper"]`);
+  if (!cmScroller && !preview) return null;
+  return {
+    cmScrollTop: cmScroller?.scrollTop ?? 0,
+    previewScrollTop: preview?.scrollTop ?? 0
+  };
+}
+
+function restoreEditorScroll(snapshot) {
+  if (!snapshot) return;
+  const root = getEditorRoot();
+  if (!root) return;
+  const cmScroller = root.querySelector(".cm-scroller");
+  const preview = root.querySelector(`[id="${editorId}-preview-wrapper"]`);
+  if (cmScroller) cmScroller.scrollTop = snapshot.cmScrollTop;
+  if (preview) preview.scrollTop = snapshot.previewScrollTop;
+}
+
+function restoreScrollAfterModelPatch(snapshot) {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      restoreEditorScroll(snapshot);
+      requestAnimationFrame(() => {
+        restoreEditorScroll(snapshot);
+      });
+    });
+  });
+}
+
 function normalizeImageMeta(fileName) {
   const rawLabel = fileName.replace(/\.[^.]+$/, "").trim();
   const label = /^(img|image|screenshot|screen-shot)([-_\s]?\d+)?$/i.test(rawLabel)
@@ -72,8 +110,10 @@ function normalizeImageMeta(fileName) {
 function replaceBlobUrl(blobUrl, serverUrl) {
   const content = props.modelValue;
   if (content.includes(blobUrl)) {
+    const scrollSnapshot = captureEditorScroll();
     emit("update:modelValue", content.replaceAll(blobUrl, serverUrl));
     URL.revokeObjectURL(blobUrl);
+    restoreScrollAfterModelPatch(scrollSnapshot);
   }
 }
 
