@@ -14,6 +14,18 @@
     {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/admin-api/:path*",
+      "destination": "/api/admin-api/:path*"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/index.html"
     }
   ]
 }

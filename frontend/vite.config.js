@@ -10,7 +10,8 @@ export default defineConfig({
       "/upload": "http://localhost:3000",
       "/download": "http://localhost:3000",
       "/images": "http://localhost:3000",
-      "/health": "http://localhost:3000"
+      "/health": "http://localhost:3000",
+      "/admin-api": "http://localhost:3000"
     }
   }
 });
